@@ -1,0 +1,6 @@
+{
+  "name": "NEXA",
+  "description": "Calm offline-first Android study, tasks, habits, focus hourglass, prayer, summaries, and life companion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">NEXA</string>
+    <string name="focus_guard_service_label">NEXA Focus Guard</string>
+    <string name="focus_guard_service_desc">Detects when a blocked app is opened during active Focus, Task, Prayer, or Daily Limit periods.</string>
+    <string name="widget_tasks_small_label">NEXA Tasks (Compact)</string>
+    <string name="widget_tasks_medium_label">NEXA Tasks (Medium)</string>
+    <string name="widget_tasks_large_label">NEXA Tasks (Detailed)</string>
+</resources>
