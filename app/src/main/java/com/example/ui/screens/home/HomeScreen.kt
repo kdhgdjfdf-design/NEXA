@@ -277,136 +277,6 @@ fun HomeScreen(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // 1. Top Row: Prominent Badges Card + Compact Notifications Box + Stats & Settings
-        item(key = "home_top_hub") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_top_hub_row"),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    onClick = { onNavigateRoute("achievements") },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 2.dp,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)),
-                    modifier = Modifier
-                        .weight(1.08f)
-                        .defaultMinSize(minHeight = 48.dp)
-                        .testTag("home_achievements_btn")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        NexaFilledIconBadge(
-                            icon = Icons.Rounded.EmojiEvents,
-                            tint = NexaSectionAccents.badges,
-                            contentDescription = strings.badges,
-                            size = 28.dp,
-                            iconSize = 16.dp,
-                            cornerRadius = 9.dp
-                        )
-                        Text(
-                            text = strings.badges,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = MaterialTheme.colorScheme.primary
-                        ) {
-                            Text(
-                                text = "$unlockedBadgesCount/$totalBadgesCount",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Compact Notifications box beside Badges
-                Surface(
-                    onClick = { onNavigateRoute("notifications") },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 2.dp,
-                    border = BorderStroke(
-                        1.dp,
-                        if (unreadNotifs > 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)
-                    ),
-                    modifier = Modifier
-                        .weight(0.92f)
-                        .defaultMinSize(minHeight = 48.dp)
-                        .testTag("home_notifications_btn")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        NexaFilledIconBadge(
-                            icon = if (unreadNotifs > 0) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications,
-                            tint = if (unreadNotifs > 0) MaterialTheme.colorScheme.primary else NexaSectionAccents.tasks,
-                            contentDescription = strings.notifications,
-                            size = 28.dp,
-                            iconSize = 15.dp,
-                            cornerRadius = 9.dp
-                        )
-                        Text(
-                            text = if (unreadNotifs > 0) "$unreadNotifs ${strings.unreadBadgeSuffix}" else strings.noNewNotifications,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                    }
-                }
-
-                Surface(
-                    onClick = { onNavigateRoute("statistics") },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 2.dp,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)),
-                    modifier = Modifier
-                        .size(48.dp)
-                        .testTag("home_stats_btn")
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.BarChart, contentDescription = strings.statistics, tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-
-                Surface(
-                    onClick = { onNavigateRoute("settings") },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 2.dp,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)),
-                    modifier = Modifier
-                        .size(48.dp)
-                        .testTag("home_settings_btn")
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Tune, contentDescription = strings.settings, tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-            }
-        }
-
         // 2. Compact Welcome Card (Directly below Badges)
         item(key = "home_welcome_card") {
             NexaCard(
@@ -568,7 +438,138 @@ fun HomeScreen(
             )
         }
 
-        // 6. Five Main Sections — Compact Single-Column Photo Cards (No top Camera or bottom Arrow icons)
+        // Quick actions, placed after the welcome and daily inspiration like NOX STUDY
+        item(key = "home_top_hub") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_top_hub_row"),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    onClick = { onNavigateRoute("achievements") },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 2.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)),
+                    modifier = Modifier
+                        .weight(1.08f)
+                        .defaultMinSize(minHeight = 48.dp)
+                        .testTag("home_achievements_btn")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        NexaFilledIconBadge(
+                            icon = Icons.Rounded.EmojiEvents,
+                            tint = NexaSectionAccents.badges,
+                            contentDescription = strings.badges,
+                            size = 28.dp,
+                            iconSize = 16.dp,
+                            cornerRadius = 9.dp
+                        )
+                        Text(
+                            text = strings.badges,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = "$unlockedBadgesCount/$totalBadgesCount",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Compact Notifications box beside Badges
+                Surface(
+                    onClick = { onNavigateRoute("notifications") },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 2.dp,
+                    border = BorderStroke(
+                        1.dp,
+                        if (unreadNotifs > 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)
+                    ),
+                    modifier = Modifier
+                        .weight(0.92f)
+                        .defaultMinSize(minHeight = 48.dp)
+                        .testTag("home_notifications_btn")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        NexaFilledIconBadge(
+                            icon = if (unreadNotifs > 0) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications,
+                            tint = if (unreadNotifs > 0) MaterialTheme.colorScheme.primary else NexaSectionAccents.tasks,
+                            contentDescription = strings.notifications,
+                            size = 28.dp,
+                            iconSize = 15.dp,
+                            cornerRadius = 9.dp
+                        )
+                        Text(
+                            text = if (unreadNotifs > 0) "$unreadNotifs ${strings.unreadBadgeSuffix}" else strings.noNewNotifications,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                }
+
+                Surface(
+                    onClick = { onNavigateRoute("statistics") },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 2.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("home_stats_btn")
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.BarChart, contentDescription = strings.statistics, tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+
+                Surface(
+                    onClick = { onNavigateRoute("settings") },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 2.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("home_settings_btn")
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Tune, contentDescription = strings.settings, tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            }
+        }
+
+
+        // Five NEXA Main Sections — Compact Single-Column Photo Cards (No top Camera or bottom Arrow icons)
         items(fiveMainSections, key = { "section_${it.key}" }) { section ->
             SectionHeroCard(
                 section = section,
