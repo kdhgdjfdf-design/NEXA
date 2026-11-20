@@ -372,6 +372,24 @@ fun HomeScreen(
                             onNext = onNextAudio,
                             onSeek = onSeekAudio
                         )
+                        if (prefs.globalEditMode) {
+                            IconButton(
+                                modifier = Modifier.align(Alignment.TopEnd),
+                                onClick = {
+                                    val updated = if (storedCards.any { it.id == "mini_audio" }) {
+                                        storedCards.map { if (it.id == "mini_audio") it.copy(visible = !it.visible) else it }
+                                    } else {
+                                        storedCards + CardLayoutConfig("mini_audio", !showMiniAudioCard, "COMPACT", 6)
+                                    }
+                                    onUpdateCardsConfig(updated)
+                                }
+                            ) {
+                                Icon(
+                                    if (showMiniAudioCard) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
+                                    contentDescription = strings.edit
+                                )
+                            }
+                        }
                     }
                 }
             }
