@@ -280,71 +280,6 @@ fun HomeScreen(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // 2. Compact Welcome Card (Directly below Badges)
-        item(key = "home_welcome_card") {
-            NexaCard(
-                modifier = Modifier.testTag("home_welcome_card"),
-                cornerRadius = 20.dp,
-                elevation = 2.dp,
-                onClick = { showProfileDialog = true }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp)
-                        .testTag("home_profile_header"),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        if (userAvatarFile != null) {
-                            AsyncImage(
-                                model = userAvatarFile,
-                                contentDescription = displayUserName,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.nexa_app_icon),
-                                contentDescription = strings.appName,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            text = "$greeting • $displayUserName",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = displayUserTagline,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Text(
-                        text = "$gregorian\n${hijri.day} ${if (strings.lang == NexaLang.AR) hijri.monthNameAr else hijri.monthNameEn}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
-                    )
-                }
-            }
-        }
-
         if (prefs.globalEditMode) {
             item(key = "home_edit_banner") {
                 NexaTintedBanner(
@@ -360,38 +295,84 @@ fun HomeScreen(
             }
         }
 
-        // 3. Mini Music Player (with Vinyl Disc toggle for top controls)
-        if (showMiniAudioCard || prefs.globalEditMode) {
-            item(key = "mini_audio") {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (prefs.globalEditMode) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+
+        // Combined NOX STUDY-style welcome + compact vinyl player header.
+        item(key = "home_header_row") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_profile_header"),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    onClick = { showProfileDialog = true },
+                    modifier = Modifier.weight(1.05f),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(46.dp)
                         ) {
-                            IconButton(onClick = {
-                                val updated = if (storedCards.any { it.id == "mini_audio" }) {
-                                    storedCards.map { if (it.id == "mini_audio") it.copy(visible = !it.visible) else it }
-                                } else {
-                                    storedCards + CardLayoutConfig("mini_audio", !showMiniAudioCard, "COMPACT", 6)
-                                }
-                                onUpdateCardsConfig(updated)
-                            }) {
-                                Icon(
-                                    if (showMiniAudioCard) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                                    contentDescription = strings.edit
+                            if (userAvatarFile != null) {
+                                AsyncImage(
+                                    model = userAvatarFile,
+                                    contentDescription = displayUserName,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.nexa_app_icon),
+                                    contentDescription = strings.appName,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
                                 )
                             }
                         }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = "$greeting • $displayUserName",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = displayUserTagline,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
-                    MiniVinylBar(
-                        audioState = audioState,
-                        onTogglePlay = onToggleAudio,
-                        onExpand = onExpandAudio,
-                        onPrevious = onPreviousAudio,
-                        onNext = onNextAudio,
-                        onSeek = onSeekAudio
-                    )
+                }
+
+                if (showMiniAudioCard || prefs.globalEditMode) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        MiniVinylBar(
+                            audioState = audioState,
+                            onTogglePlay = onToggleAudio,
+                            onExpand = onExpandAudio,
+                            onPrevious = onPreviousAudio,
+                            onNext = onNextAudio,
+                            onSeek = onSeekAudio
+                        )
+                    }
                 }
             }
         }
