@@ -130,6 +130,9 @@ fun HomeScreen(
     val todayFocusMins = focusSessions
         .filter { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(it.startedAt)) == todayIso }
         .sumOf { (it.elapsedFocusSeconds / 60).toInt() }
+    val todayFocusSessions = focusSessions.count {
+        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(it.startedAt)) == todayIso
+    }
     val habitsDoneToday = habitLogs.count { it.dateIso == todayIso && it.isCompleted }
     val levelInfo = XpAndStatsEngine.computeLevel(prefs.totalXp)
 
@@ -552,6 +555,7 @@ fun HomeScreen(
                     activeTasks = activeTasks.size,
                     completedTasksToday = completedTasksToday,
                     todayFocusMins = todayFocusMins,
+                    todaySessionsCount = todayFocusSessions,
                     habitsDoneToday = habitsDoneToday,
                     habitsTotal = habits.size,
                     isEditMode = prefs.globalEditMode,
@@ -926,106 +930,43 @@ private fun MotivationalQuoteHeroCard(
 
 @Composable
 private fun DailyProgressSummaryCard(
-    title: String,
-    level: Int,
-    totalXp: Int,
-    progressFraction: Float,
-    activeTasks: Int,
-    completedTasksToday: Int,
-    todayFocusMins: Int,
-    habitsDoneToday: Int,
-    habitsTotal: Int,
-    isEditMode: Boolean,
-    isVisible: Boolean,
-    onToggleVisibility: () -> Unit,
-    onClick: () -> Unit
+    title: String, level: Int, totalXp: Int, progressFraction: Float,
+    activeTasks: Int, completedTasksToday: Int, todayFocusMins: Int,
+    todaySessionsCount: Int, habitsDoneToday: Int, habitsTotal: Int,
+    isEditMode: Boolean, isVisible: Boolean,
+    onToggleVisibility: () -> Unit, onClick: () -> Unit
 ) {
     val strings = LocalNexaStrings.current
-    NexaCard(
-        modifier = Modifier.testTag("home_xp_bar"),
-        cornerRadius = 22.dp,
-        elevation = 2.dp,
-        onClick = onClick
-    ) {
+    NexaCard(modifier = Modifier.testTag("home_xp_bar"), cornerRadius = 24.dp, elevation = 2.dp, onClick = onClick) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${strings.levelLabel} $level • $totalXp ${strings.xpLabel}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 if (isEditMode) {
-                    IconButton(onClick = onToggleVisibility) {
-                        Icon(
-                            if (isVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                            contentDescription = strings.edit
-                        )
-                    }
+                    IconButton(onClick = onToggleVisibility) { Icon(if (isVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff, contentDescription = strings.edit) }
                 } else {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    ) {
-                        Text(
-                            text = "✓ $completedTasksToday",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                        )
-                    }
+                    Text(strings.levelLabel + " " + level + " • " + totalXp + " " + strings.xpLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                 }
             }
-
-            LinearProgressIndicator(
-                progress = { progressFraction },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(7.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ProgressMiniPill(
-                    icon = Icons.Rounded.TaskAlt,
-                    text = "${strings.todayTasksCount}: $activeTasks",
-                    modifier = Modifier.weight(1f)
-                )
-                ProgressMiniPill(
-                    icon = Icons.Rounded.HourglassTop,
-                    text = "${todayFocusMins} ${strings.minutesUnit}",
-                    modifier = Modifier.weight(0.75f)
-                )
-                ProgressMiniPill(
-                    icon = Icons.Rounded.AutoAwesome,
-                    text = "$habitsDoneToday/$habitsTotal",
-                    modifier = Modifier.weight(0.75f)
-                )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Top) {
+                HomeDailyStat(Icons.Rounded.CheckCircle, completedTasksToday.toString(), if (strings.lang == NexaLang.AR) "المهام المنجزة" else if (strings.lang == NexaLang.FR) "Tâches terminées" else "Tasks done", Modifier.weight(1f))
+                HomeDailyStat(Icons.Rounded.HourglassTop, todaySessionsCount.toString(), if (strings.lang == NexaLang.AR) "الجلسات المكتملة" else if (strings.lang == NexaLang.FR) "Sessions terminées" else "Sessions", Modifier.weight(1f))
+                HomeDailyStat(Icons.Rounded.Timer, todayFocusMins.toString(), if (strings.lang == NexaLang.AR) "دقيقة تركيز" else if (strings.lang == NexaLang.FR) "Minutes de focus" else "Focus minutes", Modifier.weight(1f))
             }
         }
+    }
+}
+
+@Composable
+private fun HomeDailyStat(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(56.dp)) {
+            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(25.dp)) }
+        }
+        Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
