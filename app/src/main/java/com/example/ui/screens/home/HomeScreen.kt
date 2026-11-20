@@ -1028,7 +1028,7 @@ private fun SectionHeroCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(160.dp)
             .graphicsLayer {
                 scaleX = pressScale
                 scaleY = pressScale
