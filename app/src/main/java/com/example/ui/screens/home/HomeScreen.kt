@@ -393,34 +393,6 @@ fun HomeScreen(
             }
         }
 
-        // 4. XP Points & Today's Progress Bar directly below the Mini Music Player
-        if (showGreetingCard || prefs.globalEditMode) {
-            item(key = "greeting_progress") {
-                DailyProgressSummaryCard(
-                    title = strings.todayAchievements,
-                    level = levelInfo.level,
-                    totalXp = prefs.totalXp,
-                    progressFraction = levelInfo.progressFraction,
-                    activeTasks = activeTasks.size,
-                    completedTasksToday = completedTasksToday,
-                    todayFocusMins = todayFocusMins,
-                    habitsDoneToday = habitsDoneToday,
-                    habitsTotal = habits.size,
-                    isEditMode = prefs.globalEditMode,
-                    isVisible = showGreetingCard,
-                    onToggleVisibility = {
-                        val updated = if (storedCards.any { it.id == "greeting_progress" }) {
-                            storedCards.map { if (it.id == "greeting_progress") it.copy(visible = !it.visible) else it }
-                        } else {
-                            storedCards + CardLayoutConfig("greeting_progress", !showGreetingCard, "STANDARD", 0)
-                        }
-                        onUpdateCardsConfig(updated)
-                    },
-                    onClick = { onNavigateRoute("statistics") }
-                )
-            }
-        }
-
         // 5. Motivational Quote Card
         item(key = "home_quote_card") {
             MotivationalQuoteHeroCard(
@@ -568,6 +540,46 @@ fun HomeScreen(
             }
         }
 
+
+        // 4. XP Points & Today's Progress Bar directly below the Mini Music Player
+        if (showGreetingCard || prefs.globalEditMode) {
+            item(key = "greeting_progress") {
+                DailyProgressSummaryCard(
+                    title = strings.todayAchievements,
+                    level = levelInfo.level,
+                    totalXp = prefs.totalXp,
+                    progressFraction = levelInfo.progressFraction,
+                    activeTasks = activeTasks.size,
+                    completedTasksToday = completedTasksToday,
+                    todayFocusMins = todayFocusMins,
+                    habitsDoneToday = habitsDoneToday,
+                    habitsTotal = habits.size,
+                    isEditMode = prefs.globalEditMode,
+                    isVisible = showGreetingCard,
+                    onToggleVisibility = {
+                        val updated = if (storedCards.any { it.id == "greeting_progress" }) {
+                            storedCards.map { if (it.id == "greeting_progress") it.copy(visible = !it.visible) else it }
+                        } else {
+                            storedCards + CardLayoutConfig("greeting_progress", !showGreetingCard, "STANDARD", 0)
+                        }
+                        onUpdateCardsConfig(updated)
+                    },
+                    onClick = { onNavigateRoute("statistics") }
+                )
+            }
+        }
+
+        item(key = "home_sections_heading") {
+            Text(
+                text = if (strings.lang == NexaLang.AR) "الأقسام الرئيسية" else if (strings.lang == NexaLang.FR) "Sections principales" else "Main Sections",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp, bottom = 8.dp)
+            )
+        }
 
         // Five NEXA Main Sections — Compact Single-Column Photo Cards (No top Camera or bottom Arrow icons)
         items(fiveMainSections, key = { "section_${it.key}" }) { section ->
@@ -1076,7 +1088,7 @@ private fun SectionHeroCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(112.dp)
+            .height(220.dp)
             .graphicsLayer {
                 scaleX = pressScale
                 scaleY = pressScale
@@ -1124,32 +1136,32 @@ private fun SectionHeroCard(
                     )
             )
 
-            // Compact Overlay Content: Status Pill at top, Title & Description cleanly at bottom (No Camera / Arrow icons)
-            Column(
+            // NOX STUDY-style composition: badge and text on the right, soft arrow tile on the left.
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 18.dp, vertical = 16.dp)
             ) {
                 Surface(
+                    modifier = Modifier.align(Alignment.TopStart),
                     shape = RoundedCornerShape(50),
                     color = Color(0x6E1B1009),
                     border = BorderStroke(0.75.dp, Color(0xFFE7C7A3).copy(alpha = 0.35f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
                             imageVector = section.icon,
                             contentDescription = null,
                             tint = Color(0xFFF3D5AE),
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Text(
                             text = section.statusBadge,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             color = Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1158,11 +1170,15 @@ private fun SectionHeroCard(
                 }
 
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .fillMaxWidth(0.82f),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = section.title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         maxLines = 1,
@@ -1170,11 +1186,29 @@ private fun SectionHeroCard(
                     )
                     Text(
                         text = section.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.88f),
-                        maxLines = 1,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.92f),
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(58.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color.White.copy(alpha = 0.24f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBack,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
                 }
             }
         }
