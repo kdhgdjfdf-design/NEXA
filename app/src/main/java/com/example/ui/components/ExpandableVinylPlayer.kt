@@ -139,175 +139,49 @@ fun MiniVinylBar(
     onSeek: (Long) -> Unit = {}
 ) {
     val strings = LocalNexaStrings.current
-    var showTopControls by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .testTag("mini_vinyl_bar"),
+        modifier = modifier.wrapContentWidth().clip(RoundedCornerShape(24.dp)).testTag("mini_vinyl_bar"),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
         tonalElevation = 0.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Controls appear at the TOP of the mini player when pressing the vinyl disc
-            AnimatedVisibility(
-                visible = showTopControls,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+            // Collapsed state: only the small vinyl disc is visible.
+            Box(
+                modifier = Modifier.size(54.dp).clip(CircleShape).clickable { expanded = !expanded }.testTag("vinyl_disc_toggle"),
+                contentAlignment = Alignment.Center
             ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("mini_vinyl_top_controls"),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(
-                                onClick = onPrevious,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .testTag("mini_vinyl_prev_btn")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.SkipPrevious,
-                                    contentDescription = strings.previousTrack,
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            FilledIconButton(
-                                onClick = onTogglePlay,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .testTag("mini_vinyl_top_play_btn"),
-                                shape = CircleShape
-                            ) {
-                                Icon(
-                                    imageVector = if (audioState.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                    contentDescription = if (audioState.isPlaying) strings.pauseFocus else strings.playAudioLabel
-                                )
-                            }
-                            IconButton(
-                                onClick = onNext,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .testTag("mini_vinyl_next_btn")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.SkipNext,
-                                    contentDescription = strings.nextTrack,
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            IconButton(
-                                onClick = onExpand,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .testTag("mini_vinyl_playlist_btn")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.QueueMusic,
-                                    contentDescription = strings.audioPlayer,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        if (audioState.durationMs > 0L) {
-                            Slider(
-                                value = (audioState.positionMs.toFloat() / audioState.durationMs.toFloat()).coerceIn(0f, 1f),
-                                onValueChange = { frac -> onSeek((frac * audioState.durationMs).toLong()) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(26.dp)
-                            )
-                        }
-                    }
-                }
+                VinylDiscGraphic(isSpinning = audioState.isPlaying, size = 48.dp)
             }
 
-            // Main row: Tapping Vinyl Disc toggles the top controls; tapping title/playlist opens full player sheet
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .clickable { showTopControls = !showTopControls }
-                        .testTag("vinyl_disc_toggle"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    VinylDiscGraphic(isSpinning = audioState.isPlaying, size = 44.dp)
-                }
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { onExpand() }
-                        .padding(vertical = 4.dp)
-                ) {
+            AnimatedVisibility(visible = expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
                         text = audioState.currentTrack?.title ?: strings.audioPlayer,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = audioState.currentTrack?.artist ?: strings.playlistCalm,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-
-                IconButton(
-                    onClick = onTogglePlay,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .testTag("mini_vinyl_play_btn")
-                ) {
-                    Icon(
-                        imageVector = if (audioState.isPlaying) Icons.Rounded.PauseCircle else Icons.Rounded.PlayCircle,
-                        contentDescription = if (audioState.isPlaying) strings.pauseFocus else strings.playAudioLabel,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = onExpand,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .testTag("mini_vinyl_expand_btn")
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.KeyboardArrowUp,
-                        contentDescription = strings.audioPlayer
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onPrevious, modifier = Modifier.size(38.dp)) { Icon(Icons.Rounded.SkipPrevious, contentDescription = strings.previousTrack) }
+                        FilledIconButton(onClick = onTogglePlay, modifier = Modifier.size(40.dp), shape = CircleShape) {
+                            Icon(imageVector = if (audioState.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (audioState.isPlaying) strings.pauseFocus else strings.playAudioLabel)
+                        }
+                        IconButton(onClick = onNext, modifier = Modifier.size(38.dp)) { Icon(Icons.Rounded.SkipNext, contentDescription = strings.nextTrack) }
+                    }
+                    TextButton(onClick = onExpand, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+                        Icon(Icons.Rounded.QueueMusic, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(strings.audioPlayer, style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
         }
