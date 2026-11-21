@@ -127,6 +127,78 @@ fun FocusScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun CoffeeCupVisual(
+    remainingFraction: Float,
+    isRunning: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val coffee = Color(0xFF80502F)
+    val cup = Color(0xFFE9D8C2)
+    androidx.compose.foundation.Canvas(
+        modifier = modifier.size(width = 210.dp, height = 190.dp)
+    ) {
+        val w = size.width
+        val h = size.height
+        val body = androidx.compose.ui.graphics.Path().apply {
+            moveTo(w * 0.20f, h * 0.18f)
+            lineTo(w * 0.80f, h * 0.18f)
+            lineTo(w * 0.70f, h * 0.86f)
+            quadraticTo(w * 0.50f, h * 0.96f, w * 0.30f, h * 0.86f)
+            close()
+        }
+        val inner = androidx.compose.ui.graphics.Path().apply {
+            moveTo(w * 0.25f, h * 0.23f)
+            lineTo(w * 0.75f, h * 0.23f)
+            lineTo(w * 0.67f, h * 0.81f)
+            quadraticTo(w * 0.50f, h * 0.89f, w * 0.33f, h * 0.81f)
+            close()
+        }
+        drawPath(body, cup)
+        drawPath(body, Color(0xFFB99B7D), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx()))
+        drawArc(
+            color = cup,
+            startAngle = -90f,
+            sweepAngle = 180f,
+            useCenter = false,
+            topLeft = androidx.compose.ui.geometry.Offset(w * 0.73f, h * 0.31f),
+            size = androidx.compose.ui.geometry.Size(w * 0.27f, h * 0.40f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 12.dp.toPx())
+        )
+        val save = drawContext.canvas.save()
+        drawContext.canvas.clipPath(inner)
+        val level = remainingFraction.coerceIn(0f, 1f)
+        val coffeeTop = h * (0.82f - 0.56f * level)
+        drawRect(
+            color = coffee,
+            topLeft = androidx.compose.ui.geometry.Offset(w * 0.24f, coffeeTop),
+            size = androidx.compose.ui.geometry.Size(w * 0.52f, h - coffeeTop)
+        )
+        drawOval(
+            color = Color(0xFFC18A59),
+            topLeft = androidx.compose.ui.geometry.Offset(w * 0.25f, coffeeTop - 5.dp.toPx()),
+            size = androidx.compose.ui.geometry.Size(w * 0.50f, 11.dp.toPx())
+        )
+        drawContext.canvas.restoreToCount(save)
+        drawOval(
+            color = Color.White.copy(alpha = 0.45f),
+            topLeft = androidx.compose.ui.geometry.Offset(w * 0.29f, h * 0.28f),
+            size = androidx.compose.ui.geometry.Size(w * 0.045f, h * 0.35f)
+        )
+        if (isRunning) {
+            drawArc(
+                color = Color(0xFFC18A59).copy(alpha = 0.75f),
+                startAngle = 205f,
+                sweepAngle = 130f,
+                useCenter = false,
+                topLeft = androidx.compose.ui.geometry.Offset(w * 0.37f, h * 0.08f),
+                size = androidx.compose.ui.geometry.Size(w * 0.26f, h * 0.12f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+            )
+        }
+    }
+}
+
+@Composable
 private fun FocusTimerTab(
     prefs: NexaPrefsState,
     timerState: FocusTimerUiState,
@@ -147,15 +219,6 @@ private fun FocusTimerTab(
     var linkedLessonId by remember { mutableStateOf<Long?>(null) }
     var showBgSheet by remember { mutableStateOf(false) }
 
-    val bgPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            onPickHourglassBackground(uri)
-        }
-    }
-
-    val customBgFile = remember(prefs.focusBackgroundUri) {
-        SectionImageCodec.resolveExistingLocalFile(prefs.focusBackgroundUri)
-    }
 
     val fraction = when {
         !timerState.isRunning -> 1f
@@ -230,35 +293,6 @@ private fun FocusTimerTab(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    if (customBgFile != null) {
-                        AsyncImage(
-                            model = customBgFile,
-                            contentDescription = strings.customizeFocusBg,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.matchParentSize()
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(id = R.drawable.img_hourglass_bg),
-                            contentDescription = strings.focusSpace,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.matchParentSize()
-                        )
-                    }
-
-                    // Warm roasted espresso gradient scrim for contrast
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    0.0f to Color(0x88140C08),
-                                    0.5f to Color(0x70140C08),
-                                    1.0f to Color(0xD9120A06)
-                                )
-                            )
-                    )
-
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -287,31 +321,13 @@ private fun FocusTimerTab(
                                 )
                             }
 
-                            Surface(
-                                onClick = { showBgSheet = true },
-                                shape = CircleShape,
-                                color = Color(0x661C120C),
-                                border = BorderStroke(0.75.dp, Color.White.copy(alpha = 0.28f)),
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .testTag("customize_hourglass_bg_btn")
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.PhotoCamera,
-                                        contentDescription = strings.customizeFocusBg,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
+
                         }
 
-                        SynchronizedHourglass(
+                        CoffeeCupVisual(
                             remainingFraction = fraction,
                             isRunning = timerState.isRunning && !timerState.isPaused,
-                            size = 230.dp,
-                            modifier = Modifier.testTag("focus_hourglass_canvas")
+                            modifier = Modifier.testTag("focus_coffee_cup")
                         )
 
                         Surface(
