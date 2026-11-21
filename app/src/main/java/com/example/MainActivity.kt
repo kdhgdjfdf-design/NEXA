@@ -255,7 +255,7 @@ private fun RoomPage(
             Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = Ink)) {
                 Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("PROJECT 90", color = Color.White.copy(alpha = .7f), style = MaterialTheme.typography.labelLarge, letterSpacing = androidx.compose.ui.unit.sp(1.5))
+                        Text("PROJECT 90", color = Color.White.copy(alpha = .7f), style = MaterialTheme.typography.labelLarge, letterSpacing = 1.5.sp))
                         Text(if (started) "ACTIVE" else "READY", color = Accent, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }
                     Text(if (started) "رحلتك بدأت." else "ابدأ ببناء أساسك العلمي.", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -391,7 +391,7 @@ private fun SubjectRow(name: String, english: String, detail: String, number: St
 private fun FocusPage(seconds: Int, running: Boolean, onToggle: () -> Unit, onReset: () -> Unit, onAdjust: (Int) -> Unit) {
     Column(Modifier.fillMaxSize().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(12.dp))
-        Text("FOCUS CHAMBER", color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = androidx.compose.ui.unit.sp(2))
+        Text("FOCUS CHAMBER", color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = 2.sp))
         Text("جلسة واحدة. مهمة واحدة.", color = Ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Box(Modifier.size(250.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -482,7 +482,7 @@ private fun DiagnosticPage(step: Int, answer: String, answers: String, onAnswer:
     val q = questions[step.coerceIn(0, 3)]
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            Text("INITIAL ASSESSMENT", color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = androidx.compose.ui.unit.sp(1.5))
+            Text("INITIAL ASSESSMENT", color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = 1.5.sp))
             Text("التشخيص الأولي", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
             Text("سؤال واحد في كل مرة. هذا فحص مبدئي فقط، وسنحتاج لاحقاً إلى أسئلة أعمق.", color = Muted)
         }
