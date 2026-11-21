@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/nexa-nox-study-ui
+      - feature/area-51
 
 permissions:
   contents: read
