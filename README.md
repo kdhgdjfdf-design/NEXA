@@ -17,3 +17,6 @@ AREA 51 is the new personal learning space built from the NEXA Android project.
 
 ## Build
 The Android APK workflow is configured to build this branch on pushes.
+
+
+Build validation: Android SDK setup uses the current v4 action.
