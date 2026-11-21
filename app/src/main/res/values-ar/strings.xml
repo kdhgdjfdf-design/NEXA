@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">NEXA</string>
-    <string name="focus_guard_service_label">حارس التركيز NEXA</string>
-    <string name="focus_guard_service_desc">يرصد فتح التطبيقات المحجوبة أثناء جلسات التركيز أو المهام أو الصلاة أو حدود الاستخدام.</string>
-    <string name="widget_tasks_small_label">مهام NEXA (صغير)</string>
-    <string name="widget_tasks_medium_label">مهام NEXA (متوسط)</string>
-    <string name="widget_tasks_large_label">مهام NEXA (كبير)</string>
+    <string name="app_name">AREA 51</string>
+    <string name="focus_guard_service_label">حارس التركيز في AREA 51</string>
+    <string name="focus_guard_service_desc">يراقب فتح التطبيقات المحظورة أثناء جلسات التركيز.</string>
+    <string name="widget_tasks_small_label">مهام AREA 51 المصغرة</string>
+    <string name="widget_tasks_medium_label">مهام AREA 51 المتوسطة</string>
+    <string name="widget_tasks_large_label">مهام AREA 51 التفصيلية</string>
 </resources>
