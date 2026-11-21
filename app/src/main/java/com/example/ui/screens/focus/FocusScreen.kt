@@ -217,7 +217,6 @@ private fun FocusTimerTab(
     var linkedTitle by remember { mutableStateOf("") }
     var linkedTaskId by remember { mutableStateOf<Long?>(null) }
     var linkedLessonId by remember { mutableStateOf<Long?>(null) }
-    var showBgSheet by remember { mutableStateOf(false) }
 
 
     val fraction = when {
@@ -445,58 +444,7 @@ private fun FocusTimerTab(
         }
     }
 
-    if (showBgSheet) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { showBgSheet = false },
-            sheetState = sheetState,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Text(strings.customizeFocusBg, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(
-                    if (customBgFile != null) strings.customImageActive else strings.defaultImageActive,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Button(
-                    onClick = {
-                        bgPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .testTag("pick_hourglass_bg_btn")
-                ) {
-                    Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(strings.chooseFromGallery)
-                }
-                if (customBgFile != null) {
-                    OutlinedButton(
-                        onClick = {
-                            onRestoreHourglassBackground()
-                            showBgSheet = false
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .testTag("restore_hourglass_bg_btn")
-                    ) {
-                        Icon(Icons.Rounded.RestartAlt, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(strings.restoreDefaultImage)
-                    }
-                }
-            }
-        }
-    }
+
 }
 
 @Composable
