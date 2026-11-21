@@ -201,7 +201,7 @@ fun StudyScreen(
                                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         Text(subj.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         Text(
-                                            "${strings.coefficient}: ${subj.coefficient} • ${strings.lessons}: ${subjLessons.size} • ${strings.flashcards}: ${subjCards.size}",
+                                            "${strings.lessons}: ${subjLessons.size} • ${strings.flashcards}: ${subjCards.size}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -244,16 +244,12 @@ fun StudyScreen(
 
     if (showAddSubject) {
         var name by remember { mutableStateOf("") }
-        var coeff by remember { mutableStateOf("2.0") }
-        var target by remember { mutableStateOf("15.0") }
         AlertDialog(
             onDismissRequest = { showAddSubject = false },
             title = { Text(strings.addSubject) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(strings.title) })
-                    OutlinedTextField(value = coeff, onValueChange = { coeff = it }, label = { Text(strings.coefficient) })
-                    OutlinedTextField(value = target, onValueChange = { target = it }, label = { Text(strings.targetAverage) })
                 }
             },
             confirmButton = {
@@ -262,8 +258,6 @@ fun StudyScreen(
                         onSaveSubject(
                             StudySubjectEntity(
                                 name = name.trim(),
-                                coefficient = coeff.toDoubleOrNull() ?: 1.0,
-                                targetAverage = target.toDoubleOrNull() ?: 15.0
                             )
                         )
                     }
@@ -554,20 +548,16 @@ private fun StudyGradesTab(
     val strings = LocalNexaStrings.current
     var showAddGrade by remember { mutableStateOf(false) }
 
-    // Weighted GPA across subjects on /20 scale
+    // Simple average calculator: each subject counts equally; no subject coefficients.
     val weightedAverage = remember(subjects, grades) {
-        var totalWeighted = 0.0
-        var totalCoeff = 0.0
-        subjects.forEach { subj ->
+        val averages = subjects.mapNotNull { subj ->
             val sg = grades.filter { it.subjectId == subj.id }
-            if (sg.isNotEmpty()) {
-                val subjAvg = sg.sumOf { (it.score / it.maxScore.coerceAtLeast(1.0)) * 20.0 * it.weight } /
+            if (sg.isEmpty()) null else {
+                sg.sumOf { (it.score / it.maxScore.coerceAtLeast(1.0)) * 20.0 * it.weight } /
                     sg.sumOf { it.weight }.coerceAtLeast(1.0)
-                totalWeighted += subjAvg * subj.coefficient
-                totalCoeff += subj.coefficient
             }
         }
-        if (totalCoeff == 0.0) 0.0 else totalWeighted / totalCoeff
+        if (averages.isEmpty()) 0.0 else averages.average()
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()) {
