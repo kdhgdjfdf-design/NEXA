@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">NEXA</string>
-    <string name="focus_guard_service_label">NEXA Focus Guard</string>
-    <string name="focus_guard_service_desc">Détecte l’ouverture d’une application bloquée pendant les sessions Focus, Tâches, Prière ou Limites.</string>
-    <string name="widget_tasks_small_label">Tâches NEXA (Compact)</string>
-    <string name="widget_tasks_medium_label">Tâches NEXA (Moyen)</string>
-    <string name="widget_tasks_large_label">Tâches NEXA (Détaillé)</string>
+    <string name="app_name">AREA 51</string>
+    <string name="focus_guard_service_label">Protection de concentration AREA 51</string>
+    <string name="focus_guard_service_desc">Détecte l’ouverture des applications bloquées pendant les sessions de concentration.</string>
+    <string name="widget_tasks_small_label">Tâches AREA 51 (compact)</string>
+    <string name="widget_tasks_medium_label">Tâches AREA 51 (moyen)</string>
+    <string name="widget_tasks_large_label">Tâches AREA 51 (détaillé)</string>
 </resources>
