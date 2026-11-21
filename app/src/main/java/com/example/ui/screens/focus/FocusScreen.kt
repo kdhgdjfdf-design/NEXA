@@ -164,21 +164,20 @@ private fun CoffeeCupVisual(
             size = androidx.compose.ui.geometry.Size(w * 0.27f, h * 0.40f),
             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 12.dp.toPx())
         )
-        val save = drawContext.canvas.save()
-        drawContext.canvas.clipPath(inner)
         val level = remainingFraction.coerceIn(0f, 1f)
         val coffeeTop = h * (0.82f - 0.56f * level)
-        drawRect(
-            color = coffee,
-            topLeft = androidx.compose.ui.geometry.Offset(w * 0.24f, coffeeTop),
-            size = androidx.compose.ui.geometry.Size(w * 0.52f, h - coffeeTop)
-        )
-        drawOval(
-            color = Color(0xFFC18A59),
-            topLeft = androidx.compose.ui.geometry.Offset(w * 0.25f, coffeeTop - 5.dp.toPx()),
-            size = androidx.compose.ui.geometry.Size(w * 0.50f, 11.dp.toPx())
-        )
-        drawContext.canvas.restoreToCount(save)
+        androidx.compose.ui.graphics.drawscope.clipPath(inner) {
+            drawRect(
+                color = coffee,
+                topLeft = androidx.compose.ui.geometry.Offset(w * 0.24f, coffeeTop),
+                size = androidx.compose.ui.geometry.Size(w * 0.52f, h - coffeeTop)
+            )
+            drawOval(
+                color = Color(0xFFC18A59),
+                topLeft = androidx.compose.ui.geometry.Offset(w * 0.25f, coffeeTop - 5.dp.toPx()),
+                size = androidx.compose.ui.geometry.Size(w * 0.50f, 11.dp.toPx())
+            )
+        }
         drawOval(
             color = Color.White.copy(alpha = 0.45f),
             topLeft = androidx.compose.ui.geometry.Offset(w * 0.29f, h * 0.28f),
