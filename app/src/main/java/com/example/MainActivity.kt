@@ -482,7 +482,7 @@ private fun DiagnosticPage(step: Int, answer: String, answers: String, onAnswer:
     val q = questions[step.coerceIn(0, 3)]
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            Text("INITIAL ASSESSMENT", color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = 1.5.sp))
+            Text("INITIAL ASSESSMENT", color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = 1.5.sp)
             Text("التشخيص الأولي", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
             Text("سؤال واحد في كل مرة. هذا فحص مبدئي فقط، وسنحتاج لاحقاً إلى أسئلة أعمق.", color = Muted)
         }
