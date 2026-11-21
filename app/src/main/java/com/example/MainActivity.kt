@@ -41,6 +41,14 @@ class MainActivity : FragmentActivity() {
     }
 }
 
+private enum class AreaSystem(val title: String, val subtitle: String) {
+    KNOWLEDGE("KNOWLEDGE", "مساحة المعرفة"),
+    LIBRARY("LIBRARY", "مساحة القراءة"),
+    MINDSET("MINDSET", "مساحة التشجيع"),
+    PASSION("PASSION", "مساحة الشغف"),
+    PROJECT_90("PROJECT 90", "النظام الأكاديمي")
+}
+
 private enum class AreaTab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     ROOM("الغرفة", Icons.Rounded.GridView),
     PROJECT("PROJECT 90", Icons.Rounded.Timeline),
@@ -51,6 +59,7 @@ private enum class AreaTab(val label: String, val icon: androidx.compose.ui.grap
 @Composable
 private fun Area51App(context: Context) {
     val prefs = remember { context.getSharedPreferences("area51_local", Context.MODE_PRIVATE) }
+    var selectedSystem by rememberSaveable { mutableStateOf(AreaSystem.PROJECT_90) }
     var tab by rememberSaveable { mutableStateOf(AreaTab.ROOM) }
     var page by rememberSaveable { mutableStateOf("home") }
     var projectStarted by rememberSaveable { mutableStateOf(prefs.getBoolean("started", false)) }
@@ -92,21 +101,23 @@ private fun Area51App(context: Context) {
         Scaffold(
             containerColor = Room,
             bottomBar = {
-                NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
-                    AreaTab.entries.forEach { item ->
-                        NavigationBarItem(
-                            selected = tab == item,
-                            onClick = { tab = item; page = "home" },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Ink,
-                                selectedTextColor = Ink,
-                                indicatorColor = Soft,
-                                unselectedIconColor = Muted,
-                                unselectedTextColor = Muted
+                if (selectedSystem == AreaSystem.PROJECT_90) {
+                    NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
+                        AreaTab.entries.forEach { item ->
+                            NavigationBarItem(
+                                selected = tab == item,
+                                onClick = { tab = item; page = "home" },
+                                icon = { Icon(item.icon, contentDescription = item.label) },
+                                label = { Text(item.label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Ink,
+                                    selectedTextColor = Ink,
+                                    indicatorColor = Soft,
+                                    unselectedIconColor = Muted,
+                                    unselectedTextColor = Muted
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -115,11 +126,18 @@ private fun Area51App(context: Context) {
                 Modifier.fillMaxSize().padding(padding)
             ) {
                 AreaHeader(
+                    system = selectedSystem,
+                    onSelectSystem = { next ->
+                        selectedSystem = next
+                        tab = AreaTab.ROOM
+                        page = "home"
+                    },
                     onBack = { page = "home" },
-                    showBack = page != "home",
-                    onSettings = { page = "settings" }
+                    showBack = page != "home"
                 )
-                when {
+                if (selectedSystem != AreaSystem.PROJECT_90) {
+                    SystemSpacePage(system = selectedSystem)
+                } else when {
                     page == "diagnostic" -> DiagnosticPage(
                         step = diagnosticStep,
                         answer = diagnosticAnswer,
@@ -205,29 +223,156 @@ private fun Area51App(context: Context) {
 }
 
 @Composable
-private fun AreaHeader(showBack: Boolean, onBack: () -> Unit, onSettings: () -> Unit) {
+private fun AreaHeader(
+    system: AreaSystem,
+    showBack: Boolean,
+    onBack: () -> Unit,
+    onSelectSystem: (AreaSystem) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     Row(
         Modifier.fillMaxWidth().background(Room).statusBarsPadding().padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (showBack) {
-                IconButton(onClick = onBack, modifier = Modifier.size(34.dp)) {
-                    Icon(Icons.Rounded.ArrowBack, contentDescription = "رجوع", tint = Ink)
-                }
-            } else {
-                Box(Modifier.size(34.dp).background(Ink, CircleShape), contentAlignment = Alignment.Center) {
-                    Text("51", color = Color.White, fontWeight = FontWeight.Bold)
-                }
+        Box {
+            Row(
+                modifier = Modifier.clickable { expanded = true }.padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    system.title,
+                    fontWeight = FontWeight.Black,
+                    color = Ink,
+                    style = MaterialTheme.typography.titleMedium,
+                    letterSpacing = 1.4.sp
+                )
+                Icon(Icons.Rounded.ExpandMore, contentDescription = "تغيير النظام", tint = Muted)
             }
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text("AREA 51", fontWeight = FontWeight.Black, color = Ink, style = MaterialTheme.typography.titleMedium, letterSpacing = 2.sp)
-                Text("THE WHITE ROOM", color = Muted, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.5.sp)
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                AreaSystem.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(option.title, fontWeight = FontWeight.SemiBold, color = Ink)
+                                Text(option.subtitle, color = Muted, style = MaterialTheme.typography.labelSmall)
+                            }
+                        },
+                        onClick = {
+                            expanded = false
+                            onSelectSystem(option)
+                        },
+                        trailingIcon = {
+                            if (option == system) Icon(Icons.Rounded.Check, contentDescription = "النظام الحالي", tint = Accent)
+                        }
+                    )
+                }
             }
         }
-        IconButton(onClick = onSettings) {
-            Icon(Icons.Rounded.Tune, contentDescription = "الإعدادات", tint = Muted)
+        if (showBack) {
+            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Rounded.ArrowBack, contentDescription = "رجوع", tint = Muted)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun SystemSpacePage(system: AreaSystem) {
+    val items = when (system) {
+        AreaSystem.KNOWLEDGE -> listOf(
+            Triple("العلوم", "افهم الظواهر والأفكار التي تفسّر العالم.", Icons.Rounded.Science),
+            Triple("التاريخ والحضارات", "تعرّف إلى الأحداث التي شكّلت عالمنا.", Icons.Rounded.AccountBalance),
+            Triple("الفلسفة والتفكير", "درّب عقلك على السؤال والتحليل.", Icons.Rounded.Psychology),
+            Triple("التكنولوجيا", "اكتشف كيف تتطور الأدوات والأفكار.", Icons.Rounded.Memory)
+        )
+        AreaSystem.LIBRARY -> listOf(
+            Triple("كتبك", "اجمع الكتب التي تريد قراءتها في مكان واحد.", Icons.Rounded.MenuBook),
+            Triple("مقالات مختارة", "قراءات قصيرة توسّع معرفتك.", Icons.Rounded.Article),
+            Triple("ملاحظات القراءة", "احتفظ بالأفكار والاقتباسات المهمة.", Icons.Rounded.EditNote)
+        )
+        AreaSystem.MINDSET -> listOf(
+            Triple("رسالة اليوم", "لا تنتظر الحماس كي تبدأ؛ ابدأ بخطوة صغيرة.", Icons.Rounded.Lightbulb),
+            Triple("مبادئ الغرفة", "الانضباط هدوء في اتخاذ القرار، وليس عقوبة.", Icons.Rounded.Psychology),
+            Triple("تحدٍ ذهني", "اسأل نفسك: ما الفكرة التي غيّرت رأيي مؤخراً؟", Icons.Rounded.Forum)
+        )
+        AreaSystem.PASSION -> listOf(
+            Triple("الطب والعلوم", "استكشف جسم الإنسان والعلوم الطبية.", Icons.Rounded.MedicalServices),
+            Triple("اللغات والثقافات", "افتح نافذة على لغات وثقافات جديدة.", Icons.Rounded.Translate),
+            Triple("الابتكار والمشاريع", "حوّل فضولك إلى تجربة أو مشروع صغير.", Icons.Rounded.Explore)
+        )
+        AreaSystem.PROJECT_90 -> emptyList()
+    }
+
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Text(system.subtitle, color = Muted, style = MaterialTheme.typography.labelLarge)
+            Text(
+                when (system) {
+                    AreaSystem.KNOWLEDGE -> "وسّع حدود معرفتك."
+                    AreaSystem.LIBRARY -> "اقرأ بعمق، واحتفظ بما يستحق."
+                    AreaSystem.MINDSET -> "ابنِ طريقة تفكيرك."
+                    AreaSystem.PASSION -> "اتبع فضولك واكتشف ما يشعل اهتمامك."
+                    AreaSystem.PROJECT_90 -> "نظامك الأكاديمي."
+                },
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Ink
+            )
+            Text(
+                when (system) {
+                    AreaSystem.KNOWLEDGE -> "مساحة للاستكشاف والتعلّم خارج حدود المنهج."
+                    AreaSystem.LIBRARY -> "مكتبتك الشخصية للأفكار والكتب والقراءات."
+                    AreaSystem.MINDSET -> "تذكيرات وتحديات قصيرة تساعدك على الاستمرار بوعي."
+                    AreaSystem.PASSION -> "مساحة لاكتشاف مجالات جديدة وتجربة اهتماماتك."
+                    AreaSystem.PROJECT_90 -> ""
+                },
+                color = Muted,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        items(items) { item ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        Modifier.size(46.dp).background(Room, RoundedCornerShape(15.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(item.third, contentDescription = null, tint = Ink)
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(item.first, color = Ink, fontWeight = FontWeight.Bold)
+                        Text(item.second, color = Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Accent)
+                }
+            }
+        }
+        item {
+            Text(
+                "هذه المساحة مستقلة عن PROJECT 90. ستُضاف أدواتها ومحتوياتها تدريجياً دون ازدحام.",
+                color = Muted,
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }
