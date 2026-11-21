@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.Spa
-import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.local.*
 import com.example.domain.i18n.LocalNexaStrings
-import com.example.domain.stats.XpAndStatsEngine
 import com.example.ui.components.NexaCard
 import com.example.ui.components.NexaFilledIconBadge
 import com.example.ui.components.NexaScreenTitleRow
@@ -25,7 +22,6 @@ import com.example.ui.components.NexaSectionAccents
 import com.example.ui.components.NexaSegmentedTabs
 import com.example.ui.components.NexaTintedBanner
 import com.example.ui.screens.habits.HabitsScreen
-import com.example.ui.screens.settings.AchievementBadgeCard
 
 /**
  * Dedicated "حياتي" (My Life) Hub combining Habits & Routines, Serenity Reflection Journal,
@@ -62,7 +58,7 @@ fun MyLifeHubScreen(
                 icon = Icons.Rounded.Spa,
                 accent = NexaSectionAccents.life
             )
-            val tabs = listOf(strings.habitsAndRoutines, strings.serenity, strings.achievements)
+            val tabs = listOf(strings.habitsAndRoutines, strings.serenity)
             NexaSegmentedTabs(
                 tabs = tabs,
                 selectedIndex = activeTab,
@@ -84,13 +80,7 @@ fun MyLifeHubScreen(
                 1 -> Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                     SerenityTab(entries = moodEntries, onAddMood = onAddMoodEntry)
                 }
-                2 -> LifeGrowthTab(
-                    prefs = prefs,
-                    achievements = achievements,
-                    tasks = tasks,
-                    focusSessions = focusSessions,
-                    habitLogs = habitLogs
-                )
+
             }
         }
     }
