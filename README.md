@@ -20,3 +20,6 @@ The Android APK workflow is configured to build this branch on pushes.
 
 
 Build validation: Android SDK setup uses the current v4 action.
+
+
+Latest prototype build includes the typography fix.
