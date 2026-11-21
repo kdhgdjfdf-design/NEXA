@@ -288,25 +288,25 @@ private fun AreaHeader(
 private fun SystemSpacePage(system: AreaSystem) {
     val items = when (system) {
         AreaSystem.KNOWLEDGE -> listOf(
-            Triple("العلوم", "افهم الظواهر والأفكار التي تفسّر العالم.", Icons.Rounded.Science),
-            Triple("التاريخ والحضارات", "تعرّف إلى الأحداث التي شكّلت عالمنا.", Icons.Rounded.AccountBalance),
-            Triple("الفلسفة والتفكير", "درّب عقلك على السؤال والتحليل.", Icons.Rounded.Psychology),
-            Triple("التكنولوجيا", "اكتشف كيف تتطور الأدوات والأفكار.", Icons.Rounded.Memory)
+            Triple("العلوم", "افهم الظواهر والأفكار التي تفسّر العالم.", Icons.Rounded.Biotech),
+            Triple("التاريخ والحضارات", "تعرّف إلى الأحداث التي شكّلت عالمنا.", Icons.Rounded.Assignment),
+            Triple("الفلسفة والتفكير", "درّب عقلك على السؤال والتحليل.", Icons.Rounded.Timeline),
+            Triple("التكنولوجيا", "اكتشف كيف تتطور الأدوات والأفكار.", Icons.Rounded.MenuBook)
         )
         AreaSystem.LIBRARY -> listOf(
             Triple("كتبك", "اجمع الكتب التي تريد قراءتها في مكان واحد.", Icons.Rounded.MenuBook),
-            Triple("مقالات مختارة", "قراءات قصيرة توسّع معرفتك.", Icons.Rounded.Article),
+            Triple("مقالات مختارة", "قراءات قصيرة توسّع معرفتك.", Icons.Rounded.MenuBook),
             Triple("ملاحظات القراءة", "احتفظ بالأفكار والاقتباسات المهمة.", Icons.Rounded.EditNote)
         )
         AreaSystem.MINDSET -> listOf(
-            Triple("رسالة اليوم", "لا تنتظر الحماس كي تبدأ؛ ابدأ بخطوة صغيرة.", Icons.Rounded.Lightbulb),
-            Triple("مبادئ الغرفة", "الانضباط هدوء في اتخاذ القرار، وليس عقوبة.", Icons.Rounded.Psychology),
-            Triple("تحدٍ ذهني", "اسأل نفسك: ما الفكرة التي غيّرت رأيي مؤخراً؟", Icons.Rounded.Forum)
+            Triple("رسالة اليوم", "لا تنتظر الحماس كي تبدأ؛ ابدأ بخطوة صغيرة.", Icons.Rounded.Check),
+            Triple("مبادئ الغرفة", "الانضباط هدوء في اتخاذ القرار، وليس عقوبة.", Icons.Rounded.Timeline),
+            Triple("تحدٍ ذهني", "اسأل نفسك: ما الفكرة التي غيّرت رأيي مؤخراً؟", Icons.Rounded.Assignment)
         )
         AreaSystem.PASSION -> listOf(
-            Triple("الطب والعلوم", "استكشف جسم الإنسان والعلوم الطبية.", Icons.Rounded.MedicalServices),
-            Triple("اللغات والثقافات", "افتح نافذة على لغات وثقافات جديدة.", Icons.Rounded.Translate),
-            Triple("الابتكار والمشاريع", "حوّل فضولك إلى تجربة أو مشروع صغير.", Icons.Rounded.Explore)
+            Triple("الطب والعلوم", "استكشف جسم الإنسان والعلوم الطبية.", Icons.Rounded.Biotech),
+            Triple("اللغات والثقافات", "افتح نافذة على لغات وثقافات جديدة.", Icons.Rounded.MenuBook),
+            Triple("الابتكار والمشاريع", "حوّل فضولك إلى تجربة أو مشروع صغير.", Icons.Rounded.ArrowOutward)
         )
         AreaSystem.PROJECT_90 -> emptyList()
     }
