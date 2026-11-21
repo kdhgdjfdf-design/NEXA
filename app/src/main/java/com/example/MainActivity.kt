@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
@@ -60,6 +61,7 @@ private fun Area51App(context: Context) {
     var noteText by rememberSaveable { mutableStateOf("") }
     var notes by remember { mutableStateOf(loadNotes(prefs)) }
     var diagnosticAnswer by rememberSaveable { mutableStateOf("") }
+    var diagnosticAnswers by rememberSaveable { mutableStateOf("") }
     var diagnosticStep by rememberSaveable { mutableIntStateOf(0) }
     var showDiagnosticResult by rememberSaveable { mutableStateOf(false) }
     var dailyChecks by remember { mutableStateOf(loadChecks(prefs)) }
@@ -121,8 +123,10 @@ private fun Area51App(context: Context) {
                     page == "diagnostic" -> DiagnosticPage(
                         step = diagnosticStep,
                         answer = diagnosticAnswer,
+                        answers = diagnosticAnswers,
                         onAnswer = { diagnosticAnswer = it },
                         onNext = {
+                            diagnosticAnswers += diagnosticAnswer + "\n"
                             if (diagnosticStep < 3) {
                                 diagnosticStep += 1
                                 diagnosticAnswer = ""
@@ -131,7 +135,7 @@ private fun Area51App(context: Context) {
                             }
                         },
                         showResult = showDiagnosticResult,
-                        onClose = { page = "home"; diagnosticStep = 0; diagnosticAnswer = ""; showDiagnosticResult = false }
+                        onClose = { page = "home"; diagnosticStep = 0; diagnosticAnswer = ""; diagnosticAnswers = ""; showDiagnosticResult = false }
                     )
                     page == "errors" -> ErrorBookPage(
                         text = noteText,
@@ -218,8 +222,8 @@ private fun AreaHeader(showBack: Boolean, onBack: () -> Unit, onSettings: () -> 
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text("AREA 51", fontWeight = FontWeight.Black, color = Ink, style = MaterialTheme.typography.titleMedium, letterSpacing = androidx.compose.ui.unit.sp(2))
-                Text("THE WHITE ROOM", color = Muted, style = MaterialTheme.typography.labelSmall, letterSpacing = androidx.compose.ui.unit.sp(1.5))
+                Text("AREA 51", fontWeight = FontWeight.Black, color = Ink, style = MaterialTheme.typography.titleMedium, letterSpacing = 2.sp)
+                Text("THE WHITE ROOM", color = Muted, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.5.sp)
             }
         }
         IconButton(onClick = onSettings) {
@@ -461,7 +465,7 @@ private fun ErrorBookPage(text: String, onText: (String) -> Unit, notes: List<St
 }
 
 @Composable
-private fun DiagnosticPage(step: Int, answer: String, onAnswer: (String) -> Unit, onNext: () -> Unit, showResult: Boolean, onClose: () -> Unit) {
+private fun DiagnosticPage(step: Int, answer: String, answers: String, onAnswer: (String) -> Unit, onNext: () -> Unit, showResult: Boolean, onClose: () -> Unit) {
     val questions = listOf(
         "رياضيات" to "ما قيمة 3/4 + 1/2 ؟",
         "فيزياء" to "ما وحدة قياس السرعة في النظام الدولي؟",
@@ -483,11 +487,13 @@ private fun DiagnosticPage(step: Int, answer: String, onAnswer: (String) -> Unit
             Text("سؤال واحد في كل مرة. هذا فحص مبدئي فقط، وسنحتاج لاحقاً إلى أسئلة أعمق.", color = Muted)
         }
         if (showResult) {
+            val score = answers.split("\n").filterIndexed { index, value -> index < correct.size && value == correct[index] }.size
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(22.dp)) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("اكتمل الفحص الأولي", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                        Text("هذه ليست علامة نهائية ولا حكماً على مستواك. سنبني التشخيص الكامل تدريجياً، مع مراعاة مستواك الدراسي.", color = Muted)
+                        Text("نتيجتك: $score / 4", color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
+                        Text("هذا فحص تمهيدي قصير، وليس حكماً على مستواك. سنبني التشخيص الكامل تدريجياً، مع مراعاة مستواك الدراسي.", color = Muted)
                         Button(onClick = onClose) { Text("العودة إلى الغرفة") }
                     }
                 }
