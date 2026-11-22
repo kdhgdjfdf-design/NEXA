@@ -60,6 +60,7 @@ private enum class AreaTab(val label: String, val icon: androidx.compose.ui.grap
 private fun Area51App(context: Context) {
     val prefs = remember { context.getSharedPreferences("area51_local", Context.MODE_PRIVATE) }
     var selectedSystem by rememberSaveable { mutableStateOf(AreaSystem.PROJECT_90) }
+    var selectedSystemSection by rememberSaveable { mutableStateOf<String?>(null) }
     var tab by rememberSaveable { mutableStateOf(AreaTab.ROOM) }
     var page by rememberSaveable { mutableStateOf("home") }
     var projectStarted by rememberSaveable { mutableStateOf(prefs.getBoolean("started", false)) }
@@ -132,11 +133,16 @@ private fun Area51App(context: Context) {
                         tab = AreaTab.ROOM
                         page = "home"
                     },
-                    onBack = { page = "home" },
+                    onBack = { if (selectedSystemSection != null) selectedSystemSection = null else page = "home" },
                     showBack = page != "home"
                 )
                 if (selectedSystem != AreaSystem.PROJECT_90) {
-                    SystemSpacePage(system = selectedSystem)
+                    SystemSpacePage(
+                        system = selectedSystem,
+                        selectedSection = selectedSystemSection,
+                        onOpenSection = { selectedSystemSection = it },
+                        onBack = { selectedSystemSection = null }
+                    )
                 } else when {
                     page == "diagnostic" -> DiagnosticPage(
                         step = diagnosticStep,
@@ -284,95 +290,96 @@ private fun AreaHeader(
 }
 
 
-@Composable
-private fun SystemSpacePage(system: AreaSystem) {
-    val items = when (system) {
-        AreaSystem.KNOWLEDGE -> listOf(
-            Triple("العلوم", "افهم الظواهر والأفكار التي تفسّر العالم.", Icons.Rounded.Biotech),
-            Triple("التاريخ والحضارات", "تعرّف إلى الأحداث التي شكّلت عالمنا.", Icons.Rounded.Assignment),
-            Triple("الفلسفة والتفكير", "درّب عقلك على السؤال والتحليل.", Icons.Rounded.Timeline),
-            Triple("التكنولوجيا", "اكتشف كيف تتطور الأدوات والأفكار.", Icons.Rounded.MenuBook)
-        )
-        AreaSystem.LIBRARY -> listOf(
-            Triple("كتبك", "اجمع الكتب التي تريد قراءتها في مكان واحد.", Icons.Rounded.MenuBook),
-            Triple("مقالات مختارة", "قراءات قصيرة توسّع معرفتك.", Icons.Rounded.MenuBook),
-            Triple("ملاحظات القراءة", "احتفظ بالأفكار والاقتباسات المهمة.", Icons.Rounded.EditNote)
-        )
-        AreaSystem.MINDSET -> listOf(
-            Triple("رسالة اليوم", "لا تنتظر الحماس كي تبدأ؛ ابدأ بخطوة صغيرة.", Icons.Rounded.Check),
-            Triple("مبادئ الغرفة", "الانضباط هدوء في اتخاذ القرار، وليس عقوبة.", Icons.Rounded.Timeline),
-            Triple("تحدٍ ذهني", "اسأل نفسك: ما الفكرة التي غيّرت رأيي مؤخراً؟", Icons.Rounded.Assignment)
-        )
-        AreaSystem.PASSION -> listOf(
-            Triple("الطب والعلوم", "استكشف جسم الإنسان والعلوم الطبية.", Icons.Rounded.Biotech),
-            Triple("اللغات والثقافات", "افتح نافذة على لغات وثقافات جديدة.", Icons.Rounded.MenuBook),
-            Triple("الابتكار والمشاريع", "حوّل فضولك إلى تجربة أو مشروع صغير.", Icons.Rounded.ArrowOutward)
-        )
-        AreaSystem.PROJECT_90 -> emptyList()
-    }
+private data class SystemSection(val title: String, val description: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val contents: List<String>)
 
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            Text(system.subtitle, color = Muted, style = MaterialTheme.typography.labelLarge)
-            Text(
-                when (system) {
+private fun sectionsFor(system: AreaSystem): List<SystemSection> = when (system) {
+    AreaSystem.KNOWLEDGE -> listOf(
+        SystemSection("العلوم", "افهم الظواهر والأفكار التي تفسّر العالم.", Icons.Rounded.Biotech, listOf("الفيزياء من حولنا", "الكيمياء والحياة اليومية", "الفضاء والكون", "أسئلة علمية تبحث عن إجابة")),
+        SystemSection("التاريخ والحضارات", "تعرّف إلى الأحداث التي شكّلت عالمنا.", Icons.Rounded.Assignment, listOf("الحضارات القديمة", "التاريخ الإسلامي", "تاريخ العلوم", "شخصيات وأحداث")),
+        SystemSection("الفلسفة والتفكير", "درّب عقلك على السؤال والتحليل.", Icons.Rounded.Timeline, listOf("التفكير النقدي", "المنطق والاستدلال", "مدارس فلسفية", "تحليل الأفكار")),
+        SystemSection("التكنولوجيا", "اكتشف كيف تتطور الأدوات والأفكار.", Icons.Rounded.MenuBook, listOf("الذكاء الاصطناعي", "البرمجة", "الهندسة والاختراعات", "الأمن الرقمي"))
+    )
+    AreaSystem.LIBRARY -> listOf(
+        SystemSection("كتبك", "اجمع الكتب التي تريد قراءتها في مكان واحد.", Icons.Rounded.MenuBook, listOf("قائمة القراءة", "قيد القراءة", "أُنجزت قراءته", "ملاحظات الكتب")),
+        SystemSection("مقالات مختارة", "قراءات قصيرة توسّع معرفتك.", Icons.Rounded.Assignment, listOf("علوم", "تاريخ", "فكر", "تقنية")),
+        SystemSection("ملاحظات القراءة", "احتفظ بالأفكار التي تستحق العودة إليها.", Icons.Rounded.EditNote, listOf("أفكار", "اقتباسات", "ملخصات", "أسئلة للبحث"))
+    )
+    AreaSystem.MINDSET -> listOf(
+        SystemSection("رسالة اليوم", "وقفة قصيرة تعيد انتباهك إلى ما يهم.", Icons.Rounded.Check, listOf("رسالة اليوم", "رسائل سابقة", "رسالتك المفضلة")),
+        SystemSection("مبادئ الغرفة", "مجموعة مبادئ عملية توجه قراراتك.", Icons.Rounded.Timeline, listOf("الانضباط", "الصبر", "التركيز", "المسؤولية")),
+        SystemSection("تحدٍ ذهني", "تمارين قصيرة للتفكير والتأمل.", Icons.Rounded.Assignment, listOf("سؤال منطقي", "تحدي ملاحظة", "حل مشكلة", "مراجعة قرار"))
+    )
+    AreaSystem.PASSION -> listOf(
+        SystemSection("الطب والعلوم", "استكشف جسم الإنسان والعلوم الطبية.", Icons.Rounded.Biotech, listOf("جسم الإنسان", "التخصصات الطبية", "تاريخ الطب", "مصطلحات طبية")),
+        SystemSection("اللغات والثقافات", "افتح نافذة على لغات وثقافات جديدة.", Icons.Rounded.MenuBook, listOf("الألمانية", "الإنجليزية", "الثقافات", "مفردات جديدة")),
+        SystemSection("الابتكار والمشاريع", "حوّل فضولك إلى تجربة أو مشروع صغير.", Icons.Rounded.ArrowOutward, listOf("أفكار قيد التطوير", "تجارب صغيرة", "مشاريع مكتملة", "دفتر الأفكار"))
+    )
+    AreaSystem.PROJECT_90 -> emptyList()
+}
+
+@Composable
+private fun SystemSpacePage(system: AreaSystem, selectedSection: String?, onOpenSection: (String) -> Unit, onBack: () -> Unit) {
+    val sections = sectionsFor(system)
+    val current = sections.firstOrNull { it.title == selectedSection }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (current == null) {
+            item {
+                Text(system.subtitle, color = Muted, style = MaterialTheme.typography.labelLarge)
+                Text(when (system) {
                     AreaSystem.KNOWLEDGE -> "وسّع حدود معرفتك."
                     AreaSystem.LIBRARY -> "اقرأ بعمق، واحتفظ بما يستحق."
                     AreaSystem.MINDSET -> "ابنِ طريقة تفكيرك."
-                    AreaSystem.PASSION -> "اتبع فضولك واكتشف ما يشعل اهتمامك."
-                    AreaSystem.PROJECT_90 -> "نظامك الأكاديمي."
-                },
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Ink
-            )
-            Text(
-                when (system) {
-                    AreaSystem.KNOWLEDGE -> "مساحة للاستكشاف والتعلّم خارج حدود المنهج."
-                    AreaSystem.LIBRARY -> "مكتبتك الشخصية للأفكار والكتب والقراءات."
-                    AreaSystem.MINDSET -> "تذكيرات وتحديات قصيرة تساعدك على الاستمرار بوعي."
-                    AreaSystem.PASSION -> "مساحة لاكتشاف مجالات جديدة وتجربة اهتماماتك."
+                    AreaSystem.PASSION -> "اتبع فضولك."
                     AreaSystem.PROJECT_90 -> ""
-                },
-                color = Muted,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        items(items) { item ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        Modifier.size(46.dp).background(Room, RoundedCornerShape(15.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(item.third, contentDescription = null, tint = Ink)
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(item.first, color = Ink, fontWeight = FontWeight.Bold)
-                        Text(item.second, color = Muted, style = MaterialTheme.typography.bodySmall)
-                    }
-                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Accent)
+                }, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
+                Text("اختر قسماً للدخول إلى محتوياته. لكل مساحة تنظيمها وأدواتها المستقلة.", color = Muted)
+            }
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("أقسام النظام", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium)
+                    Text(sections.size.toString() + " أقسام", color = Muted, style = MaterialTheme.typography.labelSmall)
                 }
             }
-        }
-        item {
-            Text(
-                "هذه المساحة مستقلة عن PROJECT 90. ستُضاف أدواتها ومحتوياتها تدريجياً دون ازدحام.",
-                color = Muted,
-                style = MaterialTheme.typography.labelSmall
-            )
+            items(sections) { section ->
+                Card(modifier = Modifier.fillMaxWidth().clickable { onOpenSection(section.title) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                    Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Box(Modifier.size(48.dp).background(Room, RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) { Icon(section.icon, contentDescription = null, tint = Ink) }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(section.title, color = Ink, fontWeight = FontWeight.Bold)
+                            Text(section.description, color = Muted, style = MaterialTheme.typography.bodySmall)
+                            Text(section.contents.size.toString() + " مسارات داخلية", color = Accent, style = MaterialTheme.typography.labelSmall)
+                        }
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = "فتح القسم", tint = Accent)
+                    }
+                }
+            }
+        } else {
+            item {
+                Text(system.title, color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = 1.3.sp)
+                Text(current.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
+                Text(current.description, color = Muted)
+            }
+            item { Text("المحتويات", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium) }
+            items(current.contents) { content ->
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                    Row(Modifier.fillMaxWidth().padding(17.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(34.dp).background(Room, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.BookmarkBorder, contentDescription = null, tint = Ink, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(content, color = Ink, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Muted)
+                    }
+                }
+            }
+            item {
+                OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Rounded.ArrowBack, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("العودة إلى أقسام النظام")
+                }
+            }
+            item { Text("هذا الهيكل ينظّم المحتوى الآن؛ إضافة المحتوى التفاعلي تتم داخل القسم نفسه دون خلطه ببقية الأنظمة.", color = Muted, style = MaterialTheme.typography.labelSmall) }
         }
     }
 }
