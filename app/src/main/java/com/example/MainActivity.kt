@@ -106,8 +106,7 @@ private fun Area51App(context: Context) {
         Scaffold(
             containerColor = Room,
             bottomBar = {
-                {
-                    NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
+                NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
                         AreaTab.entries.forEach { item ->
                             NavigationBarItem(
                                 selected = tab == item,
@@ -124,7 +123,6 @@ private fun Area51App(context: Context) {
                             )
                         }
                     }
-                }
             }
         ) { padding ->
             Column(
@@ -227,33 +225,6 @@ private fun sectionsFor(system: AreaSystem): List<SystemSection> = listOf(
     SystemSection("اللغات والشغف", "مساحة لتطوير اللغات والاهتمامات والمشاريع.", Icons.Rounded.Explore, listOf("الألمانية", "الإنجليزية", "الطب والعلوم", "أفكار ومشاريع"))
 )
 
-private data class SystemSection(val title: String, val description: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val contents: List<String>)
-
-private fun sectionsFor(system: AreaSystem): List<SystemSection> = when (system) {
-    AreaSystem.KNOWLEDGE -> listOf(
-        SystemSection("العلوم", "افهم الظواهر والأفكار التي تفسّر العالم.", Icons.Rounded.Biotech, listOf("الفيزياء من حولنا", "الكيمياء والحياة اليومية", "الفضاء والكون", "أسئلة علمية تبحث عن إجابة")),
-        SystemSection("التاريخ والحضارات", "تعرّف إلى الأحداث التي شكّلت عالمنا.", Icons.Rounded.Assignment, listOf("الحضارات القديمة", "التاريخ الإسلامي", "تاريخ العلوم", "شخصيات وأحداث")),
-        SystemSection("الفلسفة والتفكير", "درّب عقلك على السؤال والتحليل.", Icons.Rounded.Timeline, listOf("التفكير النقدي", "المنطق والاستدلال", "مدارس فلسفية", "تحليل الأفكار")),
-        SystemSection("التكنولوجيا", "اكتشف كيف تتطور الأدوات والأفكار.", Icons.Rounded.MenuBook, listOf("الذكاء الاصطناعي", "البرمجة", "الهندسة والاختراعات", "الأمن الرقمي"))
-    )
-    AreaSystem.LIBRARY -> listOf(
-        SystemSection("كتبك", "اجمع الكتب التي تريد قراءتها في مكان واحد.", Icons.Rounded.MenuBook, listOf("قائمة القراءة", "قيد القراءة", "أُنجزت قراءته", "ملاحظات الكتب")),
-        SystemSection("مقالات مختارة", "قراءات قصيرة توسّع معرفتك.", Icons.Rounded.Assignment, listOf("علوم", "تاريخ", "فكر", "تقنية")),
-        SystemSection("ملاحظات القراءة", "احتفظ بالأفكار التي تستحق العودة إليها.", Icons.Rounded.EditNote, listOf("أفكار", "اقتباسات", "ملخصات", "أسئلة للبحث"))
-    )
-    AreaSystem.MINDSET -> listOf(
-        SystemSection("رسالة اليوم", "وقفة قصيرة تعيد انتباهك إلى ما يهم.", Icons.Rounded.Check, listOf("رسالة اليوم", "رسائل سابقة", "رسالتك المفضلة")),
-        SystemSection("مبادئ الغرفة", "مجموعة مبادئ عملية توجه قراراتك.", Icons.Rounded.Timeline, listOf("الانضباط", "الصبر", "التركيز", "المسؤولية")),
-        SystemSection("تحدٍ ذهني", "تمارين قصيرة للتفكير والتأمل.", Icons.Rounded.Assignment, listOf("سؤال منطقي", "تحدي ملاحظة", "حل مشكلة", "مراجعة قرار"))
-    )
-    AreaSystem.PASSION -> listOf(
-        SystemSection("الطب والعلوم", "استكشف جسم الإنسان والعلوم الطبية.", Icons.Rounded.Biotech, listOf("جسم الإنسان", "التخصصات الطبية", "تاريخ الطب", "مصطلحات طبية")),
-        SystemSection("اللغات والثقافات", "افتح نافذة على لغات وثقافات جديدة.", Icons.Rounded.MenuBook, listOf("الألمانية", "الإنجليزية", "الثقافات", "مفردات جديدة")),
-        SystemSection("الابتكار والمشاريع", "حوّل فضولك إلى تجربة أو مشروع صغير.", Icons.Rounded.ArrowOutward, listOf("أفكار قيد التطوير", "تجارب صغيرة", "مشاريع مكتملة", "دفتر الأفكار"))
-    )
-    AreaSystem.PROJECT_90 -> emptyList()
-}
-
 @Composable
 private fun SystemSpacePage(
     system: AreaSystem, selectedSection: String?, selectedContent: String?, contentNote: String,
@@ -269,7 +240,7 @@ private fun SystemSpacePage(
         "الدراسة مسؤولية تجاه نفسك وأهدافك. ابدأ بما بين يديك الآن.",
         "الوقت سيمضي على كل حال؛ اجعل جزءاً منه شاهداً على تقدمك."
     )
-    val dayMessage = messages[java.time.LocalDate.now().dayOfYear % messages.size]
+    val dayMessage = messages[((System.currentTimeMillis() / 86400000L).toInt() % messages.size)]
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (current == null) {
             item {
