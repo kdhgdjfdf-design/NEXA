@@ -59,8 +59,10 @@ private enum class AreaTab(val label: String, val icon: androidx.compose.ui.grap
 @Composable
 private fun Area51App(context: Context) {
     val prefs = remember { context.getSharedPreferences("area51_local", Context.MODE_PRIVATE) }
-    var selectedSystem by rememberSaveable { mutableStateOf(AreaSystem.PROJECT_90) }
+    var selectedSystem by rememberSaveable { mutableStateOf(AreaSystem.KNOWLEDGE) }
     var selectedSystemSection by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedSystemContent by rememberSaveable { mutableStateOf<String?>(null) }
+    var systemContentNote by rememberSaveable { mutableStateOf("") }
     var tab by rememberSaveable { mutableStateOf(AreaTab.ROOM) }
     var page by rememberSaveable { mutableStateOf("home") }
     var projectStarted by rememberSaveable { mutableStateOf(prefs.getBoolean("started", false)) }
@@ -131,18 +133,32 @@ private fun Area51App(context: Context) {
                     onSelectSystem = { next ->
                         selectedSystem = next
                         selectedSystemSection = null
+                        selectedSystemContent = null
+                        systemContentNote = ""
                         tab = AreaTab.ROOM
                         page = "home"
                     },
-                    onBack = { if (selectedSystemSection != null) selectedSystemSection = null else page = "home" },
-                    showBack = page != "home" || selectedSystemSection != null
+                    onBack = { if (selectedSystemContent != null) selectedSystemContent = null else if (selectedSystemSection != null) selectedSystemSection = null else page = "home" },
+                    showBack = page != "home" || selectedSystemSection != null || selectedSystemContent != null
                 )
                 if (selectedSystem != AreaSystem.PROJECT_90) {
                     SystemSpacePage(
                         system = selectedSystem,
                         selectedSection = selectedSystemSection,
+                        selectedContent = selectedSystemContent,
+                        contentNote = systemContentNote,
                         onOpenSection = { selectedSystemSection = it },
-                        onBack = { selectedSystemSection = null }
+                        onOpenContent = { title ->
+                            selectedSystemContent = title
+                            systemContentNote = prefs.getString("system_note_${selectedSystem.name}_$title", "") ?: ""
+                        },
+                        onNoteChange = { systemContentNote = it },
+                        onSaveNote = {
+                            selectedSystemContent?.let { title ->
+                                prefs.edit().putString("system_note_${selectedSystem.name}_$title", systemContentNote).apply()
+                            }
+                        },
+                        onBack = { if (selectedSystemContent != null) selectedSystemContent = null else selectedSystemSection = null }
                     )
                 } else when {
                     page == "diagnostic" -> DiagnosticPage(
@@ -319,12 +335,44 @@ private fun sectionsFor(system: AreaSystem): List<SystemSection> = when (system)
 }
 
 @Composable
-private fun SystemSpacePage(system: AreaSystem, selectedSection: String?, onOpenSection: (String) -> Unit, onBack: () -> Unit) {
+private fun SystemSpacePage(
+    system: AreaSystem,
+    selectedSection: String?,
+    selectedContent: String?,
+    contentNote: String,
+    onOpenSection: (String) -> Unit,
+    onOpenContent: (String) -> Unit,
+    onNoteChange: (String) -> Unit,
+    onSaveNote: () -> Unit,
+    onBack: () -> Unit
+) {
     val sections = sectionsFor(system)
     val current = sections.firstOrNull { it.title == selectedSection }
+    val intro = when (system) {
+        AreaSystem.KNOWLEDGE -> "افهم العالم من حولك عبر العلم والتاريخ والمنطق والتقنية."
+        AreaSystem.LIBRARY -> "مكتبتك لتنظيم القراءة وتسجيل الأفكار والملخصات."
+        AreaSystem.MINDSET -> "مساحة عملية لبناء الانضباط والتركيز والتفكير الهادئ."
+        AreaSystem.PASSION -> "استكشف المجالات التي تثير فضولك وطوّر مهاراتك."
+        AreaSystem.PROJECT_90 -> ""
+    }
+    val detail = when (system) {
+        AreaSystem.KNOWLEDGE -> "ابدأ بتعريف المفهوم، ثم ابحث عن مثال واقعي، وبعدها اختبر فهمك بشرح الفكرة بكلماتك. اسأل عن الدليل والسبب والنتيجة."
+        AreaSystem.LIBRARY -> "استخدم هذا العنصر لتنظيم قراءتك. سجّل الفكرة بلغتك، أضف المصدر، ثم اكتب سؤالاً تريد البحث عنه لاحقاً."
+        AreaSystem.MINDSET -> "حوّل الفكرة إلى ممارسة صغيرة قابلة للتنفيذ. اختر موقفاً واقعياً، لاحظ طريقة تفكيرك، ثم اكتب خطوة واحدة لتطبيقها."
+        AreaSystem.PASSION -> "استكشف الموضوع تدريجياً: تعرّف إلى أساسياته، جرّب نشاطاً صغيراً، ثم دوّن ما جذب اهتمامك."
+        AreaSystem.PROJECT_90 -> "مسار تعلّم منظم لبناء أساس علمي متين."
+    }
+    val steps = when (system) {
+        AreaSystem.KNOWLEDGE -> listOf("ما الفكرة الأساسية؟ اكتب تعريفاً بسيطاً.", "ما الدليل أو المثال الذي يوضحها؟", "اشرحها دون الرجوع إلى النص.")
+        AreaSystem.LIBRARY -> listOf("سجّل المصدر أو عنوان الكتاب.", "اكتب ثلاث أفكار رئيسية بأسلوبك.", "أضف سؤالاً أو موضوعاً مرتبطاً.")
+        AreaSystem.MINDSET -> listOf("صف الموقف بموضوعية.", "حدّد الخيار الذي يقع ضمن قدرتك.", "اختر خطوة صغيرة ووقتاً واضحاً.")
+        AreaSystem.PASSION -> listOf("تعلّم مبدأ أساسياً.", "جرّب تطبيقاً صغيراً وآمناً.", "سجّل ما تريد استكشافه تالياً.")
+        AreaSystem.PROJECT_90 -> listOf("ابدأ بالتشخيص.", "أتقن الأساسيات.", "راجع أخطاءك بانتظام.")
+    }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (current == null) {
             item {
+                Text("AREA 51  /  PRIVATE SPACE", color = Muted, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.4.sp)
                 Text(system.subtitle, color = Muted, style = MaterialTheme.typography.labelLarge)
                 Text(when (system) {
                     AreaSystem.KNOWLEDGE -> "وسّع حدود معرفتك."
@@ -333,14 +381,9 @@ private fun SystemSpacePage(system: AreaSystem, selectedSection: String?, onOpen
                     AreaSystem.PASSION -> "اتبع فضولك."
                     AreaSystem.PROJECT_90 -> ""
                 }, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
-                Text("اختر قسماً للدخول إلى محتوياته. لكل مساحة تنظيمها وأدواتها المستقلة.", color = Muted)
+                Text(intro, color = Muted)
             }
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("أقسام النظام", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium)
-                    Text(sections.size.toString() + " أقسام", color = Muted, style = MaterialTheme.typography.labelSmall)
-                }
-            }
+            item { Text("الأقسام", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium) }
             items(sections) { section ->
                 Card(modifier = Modifier.fillMaxWidth().clickable { onOpenSection(section.title) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -348,13 +391,13 @@ private fun SystemSpacePage(system: AreaSystem, selectedSection: String?, onOpen
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(section.title, color = Ink, fontWeight = FontWeight.Bold)
                             Text(section.description, color = Muted, style = MaterialTheme.typography.bodySmall)
-                            Text(section.contents.size.toString() + " مسارات داخلية", color = Accent, style = MaterialTheme.typography.labelSmall)
+                            Text(section.contents.size.toString() + " عناصر", color = Accent, style = MaterialTheme.typography.labelSmall)
                         }
                         Icon(Icons.Rounded.ChevronRight, contentDescription = "فتح القسم", tint = Accent)
                     }
                 }
             }
-        } else {
+        } else if (selectedContent == null) {
             item {
                 Text(system.title, color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = 1.3.sp)
                 Text(current.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
@@ -362,7 +405,7 @@ private fun SystemSpacePage(system: AreaSystem, selectedSection: String?, onOpen
             }
             item { Text("المحتويات", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium) }
             items(current.contents) { content ->
-                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(modifier = Modifier.fillMaxWidth().clickable { onOpenContent(content) }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Row(Modifier.fillMaxWidth().padding(17.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(34.dp).background(Room, CircleShape), contentAlignment = Alignment.Center) {
                             Icon(Icons.Rounded.BookmarkBorder, contentDescription = null, tint = Ink, modifier = Modifier.size(18.dp))
@@ -373,18 +416,51 @@ private fun SystemSpacePage(system: AreaSystem, selectedSection: String?, onOpen
                     }
                 }
             }
+        } else {
+            item {
+                Text(system.title, color = Muted, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.4.sp)
+                Text(selectedContent, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
+            }
+            item {
+                Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                    Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("مدخل إلى الموضوع", color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                        Text(detail, color = Ink, style = MaterialTheme.typography.bodyLarge)
+                        Divider(color = Line)
+                        Text("خطوات عملية", color = Ink, fontWeight = FontWeight.Bold)
+                        steps.forEachIndexed { index, point ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+                                Text("0" + (index + 1), color = Accent, fontWeight = FontWeight.Bold)
+                                Text(point, color = Ink, modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+            item {
+                Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                    Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("ملاحظتي الخاصة", color = Ink, fontWeight = FontWeight.Bold)
+                        Text("دوّن ما فهمته أو سؤالاً تريد الرجوع إليه. تُحفظ الملاحظة على هذا الجهاز.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                        OutlinedTextField(value = contentNote, onValueChange = onNoteChange, modifier = Modifier.fillMaxWidth(), minLines = 3, placeholder = { Text("اكتب ملاحظتك هنا...") })
+                        Button(onClick = onSaveNote, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Rounded.BookmarkAdd, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("حفظ الملاحظة")
+                        }
+                    }
+                }
+            }
             item {
                 OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Rounded.ArrowBack, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("العودة إلى أقسام النظام")
+                    Text("العودة إلى المحتويات")
                 }
             }
-            item { Text("هذا الهيكل ينظّم المحتوى الآن؛ إضافة المحتوى التفاعلي تتم داخل القسم نفسه دون خلطه ببقية الأنظمة.", color = Muted, style = MaterialTheme.typography.labelSmall) }
         }
     }
 }
-
 @Composable
 private fun RoomPage(
     started: Boolean,
