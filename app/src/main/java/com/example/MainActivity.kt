@@ -130,11 +130,12 @@ private fun Area51App(context: Context) {
                     system = selectedSystem,
                     onSelectSystem = { next ->
                         selectedSystem = next
+                        selectedSystemSection = null
                         tab = AreaTab.ROOM
                         page = "home"
                     },
                     onBack = { if (selectedSystemSection != null) selectedSystemSection = null else page = "home" },
-                    showBack = page != "home"
+                    showBack = page != "home" || selectedSystemSection != null
                 )
                 if (selectedSystem != AreaSystem.PROJECT_90) {
                     SystemSpacePage(
