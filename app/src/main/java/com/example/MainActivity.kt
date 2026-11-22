@@ -42,24 +42,21 @@ class MainActivity : FragmentActivity() {
 }
 
 private enum class AreaSystem(val title: String, val subtitle: String) {
-    KNOWLEDGE("KNOWLEDGE", "مساحة المعرفة"),
-    LIBRARY("LIBRARY", "مساحة القراءة"),
-    MINDSET("MINDSET", "مساحة التشجيع"),
-    PASSION("PASSION", "مساحة الشغف"),
-    PROJECT_90("PROJECT 90", "النظام الأكاديمي")
+    ACADEMIC("الأكاديمي", "مساحة واحدة للتعلم والمعرفة والقراءة والتطوير")
 }
 
 private enum class AreaTab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    ROOM("الغرفة", Icons.Rounded.GridView),
-    PROJECT("PROJECT 90", Icons.Rounded.Timeline),
+    ROOM("الرئيسية", Icons.Rounded.Home),
+    PROJECT("الخطة", Icons.Rounded.Timeline),
     FOCUS("التركيز", Icons.Rounded.HourglassTop),
     LOGBOOK("السجل", Icons.Rounded.MenuBook)
 }
+private data class PersonalBook(val title: String, val author: String, val status: String, val note: String = "")
 
 @Composable
 private fun Area51App(context: Context) {
     val prefs = remember { context.getSharedPreferences("area51_local", Context.MODE_PRIVATE) }
-    var selectedSystem by rememberSaveable { mutableStateOf(AreaSystem.KNOWLEDGE) }
+    var selectedSystem by rememberSaveable { mutableStateOf(AreaSystem.ACADEMIC) }
     var selectedSystemSection by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedSystemContent by rememberSaveable { mutableStateOf<String?>(null) }
     var systemContentNote by rememberSaveable { mutableStateOf("") }
@@ -77,6 +74,11 @@ private fun Area51App(context: Context) {
     var diagnosticStep by rememberSaveable { mutableIntStateOf(0) }
     var showDiagnosticResult by rememberSaveable { mutableStateOf(false) }
     var dailyChecks by remember { mutableStateOf(loadChecks(prefs)) }
+    var books by remember { mutableStateOf(loadBooks(prefs)) }
+    var bookTitle by rememberSaveable { mutableStateOf("") }
+    var bookAuthor by rememberSaveable { mutableStateOf("") }
+    var bookStatus by rememberSaveable { mutableStateOf("أريد قراءته") }
+    var bookNote by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(focusRunning, focusSeconds) {
         if (focusRunning && focusSeconds > 0) {
@@ -104,7 +106,7 @@ private fun Area51App(context: Context) {
         Scaffold(
             containerColor = Room,
             bottomBar = {
-                if (selectedSystem == AreaSystem.PROJECT_90) {
+                {
                     NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
                         AreaTab.entries.forEach { item ->
                             NavigationBarItem(
@@ -129,115 +131,71 @@ private fun Area51App(context: Context) {
                 Modifier.fillMaxSize().padding(padding)
             ) {
                 AreaHeader(
-                    system = selectedSystem,
-                    onSelectSystem = { next ->
-                        selectedSystem = next
-                        selectedSystemSection = null
-                        selectedSystemContent = null
-                        systemContentNote = ""
-                        tab = AreaTab.ROOM
-                        page = "home"
+                    onBack = {
+                        if (selectedSystemContent != null) selectedSystemContent = null
+                        else if (selectedSystemSection != null) selectedSystemSection = null
+                        else if (page != "home") page = "home"
+                        else tab = AreaTab.ROOM
                     },
-                    onBack = { if (selectedSystemContent != null) selectedSystemContent = null else if (selectedSystemSection != null) selectedSystemSection = null else page = "home" },
                     showBack = page != "home" || selectedSystemSection != null || selectedSystemContent != null
                 )
-                if (selectedSystem != AreaSystem.PROJECT_90) {
-                    SystemSpacePage(
-                        system = selectedSystem,
-                        selectedSection = selectedSystemSection,
-                        selectedContent = selectedSystemContent,
-                        contentNote = systemContentNote,
-                        onOpenSection = { selectedSystemSection = it },
-                        onOpenContent = { title ->
-                            selectedSystemContent = title
-                            systemContentNote = prefs.getString("system_note_${selectedSystem.name}_$title", "") ?: ""
-                        },
-                        onNoteChange = { systemContentNote = it },
-                        onSaveNote = {
-                            selectedSystemContent?.let { title ->
-                                prefs.edit().putString("system_note_${selectedSystem.name}_$title", systemContentNote).apply()
+                when {
+                    page == "library" -> LibraryPage(
+                        books = books, title = bookTitle, author = bookAuthor, status = bookStatus, note = bookNote,
+                        onTitle = { bookTitle = it }, onAuthor = { bookAuthor = it }, onStatus = { bookStatus = it }, onNote = { bookNote = it },
+                        onAdd = {
+                            if (bookTitle.isNotBlank()) {
+                                books = books + PersonalBook(bookTitle.trim(), bookAuthor.trim(), bookStatus, bookNote.trim())
+                                saveBooks(prefs, books)
+                                bookTitle = ""; bookAuthor = ""; bookNote = ""; bookStatus = "أريد قراءته"
                             }
                         },
-                        onBack = { if (selectedSystemContent != null) selectedSystemContent = null else selectedSystemSection = null }
+                        onDelete = { index -> books = books.toMutableList().also { it.removeAt(index) }; saveBooks(prefs, books) }
                     )
-                } else when {
                     page == "diagnostic" -> DiagnosticPage(
-                        step = diagnosticStep,
-                        answer = diagnosticAnswer,
-                        answers = diagnosticAnswers,
+                        step = diagnosticStep, answer = diagnosticAnswer, answers = diagnosticAnswers,
                         onAnswer = { diagnosticAnswer = it },
                         onNext = {
                             diagnosticAnswers += diagnosticAnswer + "\n"
-                            if (diagnosticStep < 3) {
-                                diagnosticStep += 1
-                                diagnosticAnswer = ""
-                            } else {
-                                showDiagnosticResult = true
-                            }
+                            if (diagnosticStep < 3) { diagnosticStep += 1; diagnosticAnswer = "" } else showDiagnosticResult = true
                         },
                         showResult = showDiagnosticResult,
                         onClose = { page = "home"; diagnosticStep = 0; diagnosticAnswer = ""; diagnosticAnswers = ""; showDiagnosticResult = false }
                     )
                     page == "errors" -> ErrorBookPage(
-                        text = noteText,
-                        onText = { noteText = it },
-                        notes = notes,
-                        onSave = {
-                            if (noteText.isNotBlank()) {
-                                notes = notes + noteText.trim()
-                                saveNotes(prefs, notes)
-                                noteText = ""
-                            }
-                        },
-                        onDelete = { index ->
-                            notes = notes.toMutableList().also { it.removeAt(index) }
-                            saveNotes(prefs, notes)
-                        }
+                        text = noteText, onText = { noteText = it }, notes = notes,
+                        onSave = { if (noteText.isNotBlank()) { notes = notes + noteText.trim(); saveNotes(prefs, notes); noteText = "" } },
+                        onDelete = { index -> notes = notes.toMutableList().also { it.removeAt(index) }; saveNotes(prefs, notes) }
                     )
                     page == "settings" -> SettingsPage(onResetFocus = { focusSeconds = 25 * 60; focusRunning = false })
                     else -> when (tab) {
-                        AreaTab.ROOM -> RoomPage(
-                            started = projectStarted,
-                            completed = completed,
-                            focusDone = focusDone,
-                            onStart = {
-                                projectStarted = true
-                                prefs.edit().putBoolean("started", true).apply()
-                                tab = AreaTab.PROJECT
+                        AreaTab.ROOM -> SystemSpacePage(
+                            system = AreaSystem.ACADEMIC, selectedSection = selectedSystemSection, selectedContent = selectedSystemContent,
+                            contentNote = systemContentNote, onOpenSection = { selectedSystemSection = it },
+                            onOpenContent = { title ->
+                                if (title == "افتح مكتبتي") { page = "library"; selectedSystemSection = null; selectedSystemContent = null }
+                                else { selectedSystemContent = title; systemContentNote = prefs.getString("system_note_${selectedSystem.name}_$title", "") ?: "" }
                             },
-                            onOpenProject = { tab = AreaTab.PROJECT },
-                            onOpenDiagnostic = { page = "diagnostic" },
-                            onOpenErrors = { page = "errors" }
+                            onNoteChange = { systemContentNote = it },
+                            onSaveNote = { selectedSystemContent?.let { title -> prefs.edit().putString("system_note_${selectedSystem.name}_$title", systemContentNote).apply() } },
+                            onBack = { if (selectedSystemContent != null) selectedSystemContent = null else selectedSystemSection = null }
                         )
                         AreaTab.PROJECT -> ProjectPage(
-                            started = projectStarted,
-                            completed = completed,
-                            checks = dailyChecks,
-                            onStart = {
-                                projectStarted = true
-                                prefs.edit().putBoolean("started", true).apply()
-                            },
+                            started = projectStarted, completed = completed, checks = dailyChecks,
+                            onStart = { projectStarted = true; prefs.edit().putBoolean("started", true).apply() },
                             onToggle = { key, checked ->
                                 dailyChecks = dailyChecks.toMutableMap().also { it[key] = checked }
                                 prefs.edit().putString("checks", JSONObject(dailyChecks as Map<*, *>).toString()).apply()
-                                completed = dailyChecks.values.count { it }
-                                prefs.edit().putInt("completed", completed).apply()
+                                completed = dailyChecks.values.count { it }; prefs.edit().putInt("completed", completed).apply()
                             },
-                            onDiagnostic = { page = "diagnostic" },
-                            onErrors = { page = "errors" }
+                            onDiagnostic = { page = "diagnostic" }, onErrors = { page = "errors" }
                         )
                         AreaTab.FOCUS -> FocusPage(
-                            seconds = focusSeconds,
-                            running = focusRunning,
-                            onToggle = { focusRunning = !focusRunning },
+                            seconds = focusSeconds, running = focusRunning, onToggle = { focusRunning = !focusRunning },
                             onReset = { focusRunning = false; focusSeconds = 25 * 60 },
                             onAdjust = { minutes -> focusRunning = false; focusSeconds = minutes * 60 }
                         )
-                        AreaTab.LOGBOOK -> LogbookPage(
-                            notes = notes,
-                            onAdd = { page = "errors" },
-                            onDiagnostic = { page = "diagnostic" }
-                        )
+                        AreaTab.LOGBOOK -> LogbookPage(notes = notes, onAdd = { page = "errors" }, onDiagnostic = { page = "diagnostic" })
                     }
                 }
             }
@@ -246,66 +204,28 @@ private fun Area51App(context: Context) {
 }
 
 @Composable
-private fun AreaHeader(
-    system: AreaSystem,
-    showBack: Boolean,
-    onBack: () -> Unit,
-    onSelectSystem: (AreaSystem) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Row(
-        Modifier.fillMaxWidth().background(Room).statusBarsPadding().padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Box {
-            Row(
-                modifier = Modifier.clickable { expanded = true }.padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    system.title,
-                    fontWeight = FontWeight.Black,
-                    color = Ink,
-                    style = MaterialTheme.typography.titleMedium,
-                    letterSpacing = 1.4.sp
-                )
-                Icon(Icons.Rounded.ExpandMore, contentDescription = "تغيير النظام", tint = Muted)
-            }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color.White)
-            ) {
-                AreaSystem.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(option.title, fontWeight = FontWeight.SemiBold, color = Ink)
-                                Text(option.subtitle, color = Muted, style = MaterialTheme.typography.labelSmall)
-                            }
-                        },
-                        onClick = {
-                            expanded = false
-                            onSelectSystem(option)
-                        },
-                        trailingIcon = {
-                            if (option == system) Icon(Icons.Rounded.Check, contentDescription = "النظام الحالي", tint = Accent)
-                        }
-                    )
-                }
-            }
+private fun AreaHeader(showBack: Boolean, onBack: () -> Unit) {
+    Row(Modifier.fillMaxWidth().background(Room).statusBarsPadding().padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("AREA 51", fontWeight = FontWeight.Black, color = Ink, style = MaterialTheme.typography.titleMedium, letterSpacing = 1.8.sp)
+            Text("النظام الأكاديمي", color = Muted, style = MaterialTheme.typography.labelSmall)
         }
-        if (showBack) {
-            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Rounded.ArrowBack, contentDescription = "رجوع", tint = Muted)
-            }
+        if (showBack) IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+            Icon(Icons.Rounded.ArrowBack, contentDescription = "رجوع", tint = Muted)
         }
     }
 }
 
+
+private data class SystemSection(val title: String, val description: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val contents: List<String>)
+private fun sectionsFor(system: AreaSystem): List<SystemSection> = listOf(
+    SystemSection("المعرفة", "العلوم والتاريخ والتفكير والتقنية في مكان واحد.", Icons.Rounded.Biotech, listOf("العلوم والطبيعة", "التاريخ والحضارات", "التفكير والمنطق", "التكنولوجيا والبرمجة")),
+    SystemSection("الخطة الأكاديمية", "مسار PROJECT 90 للمواد العلمية الأربع.", Icons.Rounded.Timeline, listOf("الرياضيات", "الفيزياء", "الكيمياء", "علوم الحياة والأرض")),
+    SystemSection("مكتبة كتبي", "مكان خاص لتسجيل كتبك ومتابعة قراءتها.", Icons.Rounded.MenuBook, listOf("افتح مكتبتي")),
+    SystemSection("العقلية والمسؤولية", "رسائل ومبادئ تذكّرك بما تريد بناءه.", Icons.Rounded.Flag, listOf("رسالة اليوم", "الانضباط", "المسؤولية", "الصبر والتركيز")),
+    SystemSection("اللغات والشغف", "مساحة لتطوير اللغات والاهتمامات والمشاريع.", Icons.Rounded.Explore, listOf("الألمانية", "الإنجليزية", "الطب والعلوم", "أفكار ومشاريع"))
+)
 
 private data class SystemSection(val title: String, val description: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val contents: List<String>)
 
@@ -336,54 +256,39 @@ private fun sectionsFor(system: AreaSystem): List<SystemSection> = when (system)
 
 @Composable
 private fun SystemSpacePage(
-    system: AreaSystem,
-    selectedSection: String?,
-    selectedContent: String?,
-    contentNote: String,
-    onOpenSection: (String) -> Unit,
-    onOpenContent: (String) -> Unit,
-    onNoteChange: (String) -> Unit,
-    onSaveNote: () -> Unit,
-    onBack: () -> Unit
+    system: AreaSystem, selectedSection: String?, selectedContent: String?, contentNote: String,
+    onOpenSection: (String) -> Unit, onOpenContent: (String) -> Unit,
+    onNoteChange: (String) -> Unit, onSaveNote: () -> Unit, onBack: () -> Unit
 ) {
     val sections = sectionsFor(system)
     val current = sections.firstOrNull { it.title == selectedSection }
-    val intro = when (system) {
-        AreaSystem.KNOWLEDGE -> "افهم العالم من حولك عبر العلم والتاريخ والمنطق والتقنية."
-        AreaSystem.LIBRARY -> "مكتبتك لتنظيم القراءة وتسجيل الأفكار والملخصات."
-        AreaSystem.MINDSET -> "مساحة عملية لبناء الانضباط والتركيز والتفكير الهادئ."
-        AreaSystem.PASSION -> "استكشف المجالات التي تثير فضولك وطوّر مهاراتك."
-        AreaSystem.PROJECT_90 -> ""
-    }
-    val detail = when (system) {
-        AreaSystem.KNOWLEDGE -> "ابدأ بتعريف المفهوم، ثم ابحث عن مثال واقعي، وبعدها اختبر فهمك بشرح الفكرة بكلماتك. اسأل عن الدليل والسبب والنتيجة."
-        AreaSystem.LIBRARY -> "استخدم هذا العنصر لتنظيم قراءتك. سجّل الفكرة بلغتك، أضف المصدر، ثم اكتب سؤالاً تريد البحث عنه لاحقاً."
-        AreaSystem.MINDSET -> "حوّل الفكرة إلى ممارسة صغيرة قابلة للتنفيذ. اختر موقفاً واقعياً، لاحظ طريقة تفكيرك، ثم اكتب خطوة واحدة لتطبيقها."
-        AreaSystem.PASSION -> "استكشف الموضوع تدريجياً: تعرّف إلى أساسياته، جرّب نشاطاً صغيراً، ثم دوّن ما جذب اهتمامك."
-        AreaSystem.PROJECT_90 -> "مسار تعلّم منظم لبناء أساس علمي متين."
-    }
-    val steps = when (system) {
-        AreaSystem.KNOWLEDGE -> listOf("ما الفكرة الأساسية؟ اكتب تعريفاً بسيطاً.", "ما الدليل أو المثال الذي يوضحها؟", "اشرحها دون الرجوع إلى النص.")
-        AreaSystem.LIBRARY -> listOf("سجّل المصدر أو عنوان الكتاب.", "اكتب ثلاث أفكار رئيسية بأسلوبك.", "أضف سؤالاً أو موضوعاً مرتبطاً.")
-        AreaSystem.MINDSET -> listOf("صف الموقف بموضوعية.", "حدّد الخيار الذي يقع ضمن قدرتك.", "اختر خطوة صغيرة ووقتاً واضحاً.")
-        AreaSystem.PASSION -> listOf("تعلّم مبدأ أساسياً.", "جرّب تطبيقاً صغيراً وآمناً.", "سجّل ما تريد استكشافه تالياً.")
-        AreaSystem.PROJECT_90 -> listOf("ابدأ بالتشخيص.", "أتقن الأساسيات.", "راجع أخطاءك بانتظام.")
-    }
+    val messages = listOf(
+        "المسؤولية لا تنتظر المزاج. افعل ما تستطيع اليوم، بصدق وثبات.",
+        "مستقبلك يُبنى من اختياراتك الصغيرة، لا من الوعود وحدها.",
+        "لا تحتاج أن تكون مثالياً؛ تحتاج أن تلتزم بخطوتك القادمة.",
+        "الدراسة مسؤولية تجاه نفسك وأهدافك. ابدأ بما بين يديك الآن.",
+        "الوقت سيمضي على كل حال؛ اجعل جزءاً منه شاهداً على تقدمك."
+    )
+    val dayMessage = messages[java.time.LocalDate.now().dayOfYear % messages.size]
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (current == null) {
             item {
-                Text("AREA 51  /  PRIVATE SPACE", color = Muted, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.4.sp)
-                Text(system.subtitle, color = Muted, style = MaterialTheme.typography.labelLarge)
-                Text(when (system) {
-                    AreaSystem.KNOWLEDGE -> "وسّع حدود معرفتك."
-                    AreaSystem.LIBRARY -> "اقرأ بعمق، واحتفظ بما يستحق."
-                    AreaSystem.MINDSET -> "ابنِ طريقة تفكيرك."
-                    AreaSystem.PASSION -> "اتبع فضولك."
-                    AreaSystem.PROJECT_90 -> ""
-                }, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
-                Text(intro, color = Muted)
+                Text("مساحتك الأكاديمية", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
+                Text("واجهة واحدة تجمع المعرفة والخطة والقراءة وتطوير الذات.", color = Muted)
             }
-            item { Text("الأقسام", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium) }
+            item {
+                Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Ink)) {
+                    Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Rounded.Flag, contentDescription = null, tint = Accent)
+                            Text("تذكير بالمسؤولية", color = Accent, fontWeight = FontWeight.Bold)
+                        }
+                        Text(dayMessage, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("خطوة ثابتة اليوم أفضل من تأجيل طويل.", color = Color.White.copy(alpha = .68f), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            item { Text("أقسام الأكاديمي", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium) }
             items(sections) { section ->
                 Card(modifier = Modifier.fillMaxWidth().clickable { onOpenSection(section.title) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -391,7 +296,6 @@ private fun SystemSpacePage(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(section.title, color = Ink, fontWeight = FontWeight.Bold)
                             Text(section.description, color = Muted, style = MaterialTheme.typography.bodySmall)
-                            Text(section.contents.size.toString() + " عناصر", color = Accent, style = MaterialTheme.typography.labelSmall)
                         }
                         Icon(Icons.Rounded.ChevronRight, contentDescription = "فتح القسم", tint = Accent)
                     }
@@ -399,41 +303,50 @@ private fun SystemSpacePage(
             }
         } else if (selectedContent == null) {
             item {
-                Text(system.title, color = Muted, style = MaterialTheme.typography.labelLarge, letterSpacing = 1.3.sp)
+                Text("الأكاديمي", color = Muted, style = MaterialTheme.typography.labelLarge)
                 Text(current.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
                 Text(current.description, color = Muted)
             }
-            item { Text("المحتويات", fontWeight = FontWeight.Bold, color = Ink, style = MaterialTheme.typography.titleMedium) }
             items(current.contents) { content ->
                 Card(modifier = Modifier.fillMaxWidth().clickable { onOpenContent(content) }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Row(Modifier.fillMaxWidth().padding(17.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(34.dp).background(Room, CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.BookmarkBorder, contentDescription = null, tint = Ink, modifier = Modifier.size(18.dp))
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Text(content, color = Ink, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                        Icon(Icons.Rounded.BookmarkBorder, contentDescription = null, tint = Accent)
+                        Spacer(Modifier.width(12.dp)); Text(content, color = Ink, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
                         Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Muted)
                     }
                 }
             }
         } else {
+            val detail = when (selectedContent) {
+                "رسالة اليوم" -> dayMessage
+                "المسؤولية" -> "المسؤولية أن تفي بما عليك حتى عندما لا يراقبك أحد. ابدأ بالمهمة الأهم، وكن صادقاً مع نفسك في تقييم ما أنجزته."
+                "الانضباط" -> "الانضباط ليس قسوة؛ هو أن تجعل الفعل الصحيح أسهل من التأجيل، وأن تعود للمسار بعد أي تعثر."
+                "الصبر والتركيز" -> "قسّم العمل إلى مهمة واحدة واضحة، وامنحها وقتاً مناسباً، وخذ استراحة عندما تحتاج."
+                "الألمانية" -> "ابدأ بالأصوات والتحيات والجمل اليومية، ثم ابنِ المفردات والقواعد تدريجياً."
+                "الإنجليزية" -> "تعلّم الكلمات داخل جمل، واستمع واقرأ يومياً بقدر يناسب وقتك."
+                "الطب والعلوم" -> "تعرّف إلى جسم الإنسان والتخصصات الطبية من خلال مبادئ علمية موثوقة ومبسطة."
+                "أفكار ومشاريع" -> "دوّن الفكرة، حدّد المشكلة التي تحلها، ثم اختبرها بخطوة صغيرة."
+                "الرياضيات" -> "افهم القاعدة، شاهد مثالاً محلولاً، ثم حل مسائل متدرجة دون النظر إلى الحل."
+                "الفيزياء" -> "اربط القانون بالظاهرة والوحدات، ثم طبّقه على أمثلة."
+                "الكيمياء" -> "ابدأ ببنية المادة والذرات والجزيئات، ثم انتقل إلى الصيغ والتفاعلات."
+                "علوم الحياة والأرض" -> "اربط البنية بالوظيفة، واستخدم الرسوم لتوضيح العلاقات."
+                "التاريخ والحضارات" -> "افهم الحدث في سياقه الزمني والجغرافي، وميّز بين الوقائع وتفسيراتها."
+                "التفكير والمنطق" -> "اسأل عن الادعاء والدليل والافتراضات، واختبر الفكرة بمثال مضاد."
+                "التكنولوجيا والبرمجة" -> "قسّم المشكلة إلى خطوات، افهم المبدأ، ثم اختبر الحل وحسّنه."
+                else -> "ابدأ بسؤال واضح، وابحث عن مثال موثوق، ثم اشرح ما تعلمته بكلماتك."
+            }
             item {
-                Text(system.title, color = Muted, style = MaterialTheme.typography.labelSmall, letterSpacing = 1.4.sp)
+                Text(current.title, color = Muted, style = MaterialTheme.typography.labelSmall)
                 Text(selectedContent, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
             }
             item {
                 Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("مدخل إلى الموضوع", color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                        Text("الفكرة الأساسية", color = Accent, fontWeight = FontWeight.Bold)
                         Text(detail, color = Ink, style = MaterialTheme.typography.bodyLarge)
                         Divider(color = Line)
-                        Text("خطوات عملية", color = Ink, fontWeight = FontWeight.Bold)
-                        steps.forEachIndexed { index, point ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
-                                Text("0" + (index + 1), color = Accent, fontWeight = FontWeight.Bold)
-                                Text(point, color = Ink, modifier = Modifier.weight(1f))
-                            }
-                        }
+                        Text("خطوة عملية", color = Ink, fontWeight = FontWeight.Bold)
+                        Text(if (current.title == "العقلية والمسؤولية") "اكتب أهم مسؤولية عليك اليوم، وحدد متى ستبدأ بها." else "اكتب الفكرة بأسلوبك، ثم طبّقها على مثال واحد.", color = Muted)
                     }
                 }
             }
@@ -441,26 +354,65 @@ private fun SystemSpacePage(
                 Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("ملاحظتي الخاصة", color = Ink, fontWeight = FontWeight.Bold)
-                        Text("دوّن ما فهمته أو سؤالاً تريد الرجوع إليه. تُحفظ الملاحظة على هذا الجهاز.", color = Muted, style = MaterialTheme.typography.bodySmall)
                         OutlinedTextField(value = contentNote, onValueChange = onNoteChange, modifier = Modifier.fillMaxWidth(), minLines = 3, placeholder = { Text("اكتب ملاحظتك هنا...") })
-                        Button(onClick = onSaveNote, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Rounded.BookmarkAdd, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("حفظ الملاحظة")
-                        }
+                        Button(onClick = onSaveNote, modifier = Modifier.fillMaxWidth()) { Text("حفظ الملاحظة") }
                     }
                 }
             }
-            item {
-                OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Rounded.ArrowBack, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("العودة إلى المحتويات")
+            item { OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("العودة إلى القسم") } }
+        }
+    }
+}
+
+@Composable
+private fun LibraryPage(
+    books: List<PersonalBook>, title: String, author: String, status: String, note: String,
+    onTitle: (String) -> Unit, onAuthor: (String) -> Unit, onStatus: (String) -> Unit, onNote: (String) -> Unit,
+    onAdd: () -> Unit, onDelete: (Int) -> Unit
+) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("مكتبة كتبي", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Ink)
+            Text("سجّل كتبك وتابع ما تقرؤه وما أنهيته. تُحفظ بياناتك على هذا الجهاز.", color = Muted)
+        }
+        item {
+            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(value = title, onValueChange = onTitle, modifier = Modifier.fillMaxWidth(), label = { Text("اسم الكتاب") }, singleLine = true)
+                    OutlinedTextField(value = author, onValueChange = onAuthor, modifier = Modifier.fillMaxWidth(), label = { Text("المؤلف (اختياري)") }, singleLine = true)
+                    Text("حالة القراءة", color = Ink, fontWeight = FontWeight.SemiBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("أريد قراءته", "أقرأه الآن", "أنهيته").forEach { option ->
+                            FilterChip(selected = status == option, onClick = { onStatus(option) }, label = { Text(option) })
+                        }
+                    }
+                    OutlinedTextField(value = note, onValueChange = onNote, modifier = Modifier.fillMaxWidth(), label = { Text("ملاحظة عن الكتاب (اختياري)") }, minLines = 2)
+                    Button(onClick = onAdd, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Rounded.Add, contentDescription = null); Spacer(Modifier.width(6.dp)); Text("إضافة إلى مكتبتي")
+                    }
+                }
+            }
+        }
+        item { Text("كتبك (" + books.size + ")", color = Ink, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) }
+        if (books.isEmpty()) item { Text("مكتبتك فارغة حالياً. أضف أول كتاب تريد الاحتفاظ به.", color = Muted) }
+        else items(books.mapIndexed { index, book -> index to book }) { (index, book) ->
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Row(Modifier.fillMaxWidth().padding(15.dp), verticalAlignment = Alignment.Top) {
+                    Icon(Icons.Rounded.MenuBook, contentDescription = null, tint = Accent)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(book.title, color = Ink, fontWeight = FontWeight.Bold)
+                        if (book.author.isNotBlank()) Text(book.author, color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Text(book.status, color = Accent, style = MaterialTheme.typography.labelSmall)
+                        if (book.note.isNotBlank()) Text(book.note, color = Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    IconButton(onClick = { onDelete(index) }) { Icon(Icons.Rounded.DeleteOutline, contentDescription = "حذف الكتاب", tint = Muted) }
                 }
             }
         }
     }
 }
+
 @Composable
 private fun RoomPage(
     started: Boolean,
@@ -767,6 +719,20 @@ private fun SettingsPage(onResetFocus: () -> Unit) {
         OutlinedButton(onClick = onResetFocus) { Text("إعادة ضبط مؤقت التركيز") }
         Text("النسخة الأولى • White Room", color = Muted, style = MaterialTheme.typography.labelSmall)
     }
+}
+
+private fun loadBooks(prefs: android.content.SharedPreferences): List<PersonalBook> = try {
+    val array = JSONArray(prefs.getString("personal_books", "[]"))
+    (0 until array.length()).map { i ->
+        val item = array.getJSONObject(i)
+        PersonalBook(item.optString("title"), item.optString("author"), item.optString("status", "أريد قراءته"), item.optString("note"))
+    }
+} catch (_: Exception) { emptyList() }
+
+private fun saveBooks(prefs: android.content.SharedPreferences, books: List<PersonalBook>) {
+    val array = JSONArray()
+    books.forEach { book -> array.put(JSONObject().put("title", book.title).put("author", book.author).put("status", book.status).put("note", book.note)) }
+    prefs.edit().putString("personal_books", array.toString()).apply()
 }
 
 private fun loadNotes(prefs: android.content.SharedPreferences): List<String> = try {
